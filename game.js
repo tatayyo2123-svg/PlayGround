@@ -2,16 +2,23 @@ import {
   RANKS, DOMAINS, LINEAGES, STARTER_RACES, TRAITS, ACTIONS, APPEARANCE_OPTIONS,
   SKIN_TONES, HAIR_COLORS, EYE_COLORS, DEFAULT_EPITHETS,
   domainOf, lineageOf, raceOf, traitOf, combinedMods, apMax, computeMight, fmt, roman,
-  newGame, performAction, canAfford, missingReason, canAscend, ascend, standing,
-  endAeon, rankMap, applyEventChoice, pickEvent, addLog, makeRelic, RIVAL_POOL,
+  newGame, performAction, canAfford, canAscend, ascend, standing,
+  endAeon, applyEventChoice, pickEvent, addLog, RIVAL_POOL, setNumberLocale,
 } from './data.js';
 import { renderPortrait } from './portrait.js';
 import { icon, DOMAIN_ICONS, STAT_ICONS, TRAIT_ICONS, RACE_ICONS } from './icons.js';
+import { t, setLang, isEs, applyStatic, localizedEvent, ACTION_TEXT_ES } from './i18n.js';
 
 const $ = sel => document.querySelector(sel);
 const $$ = sel => Array.from(document.querySelectorAll(sel));
 const SAVE_KEY = 'godspire.save.v1';
 const AEON_TITLES = ['The First Dawn', 'The Gathering', 'The Age of Temples', 'The Long Summer', 'The Turning', 'The Age of Kings', 'The Holy Wars', 'The Quiet Sky', 'The Gilded Age', 'The Last Silence', 'The Starfall'];
+const MOOD_COLORS = { serene: '#9fd9c4', radiant: '#ffd77a', triumphant: '#e8c987', wrathful: '#ff8a5c', weary: '#a58cff', restless: '#7fb8ff', ancient: '#d9b36b' };
+
+let uiLang = 'en';
+try { uiLang = localStorage.getItem('godspire.lang') === 'es' ? 'es' : 'en'; } catch (e) { /* noop */ }
+setLang(uiLang);
+setNumberLocale(uiLang);
 
 let draft = makeDraft();
 let creatorTab = 'face';
@@ -25,8 +32,8 @@ let toastTimer = null;
 function makeDraft() {
   return {
     name: 'Aurelion',
-    epithet: 'The Stormlord',
-    pantheon: 'The New Order',
+    epithet: t('The Stormlord'),
+    pantheon: t('The New Order'),
     domain: 'storm',
     lineage: 'celestial',
     race: 'humans',
@@ -57,6 +64,72 @@ function rgba(hex, a) {
 function showScreen(id) {
   $$('.screen').forEach(s => s.classList.toggle('active', s.id === id));
   window.scrollTo(0, 0);
+}
+
+function domainName(d) { return t(d.name); }
+function lineageName(l) { return t(l.name); }
+function rankName(rank) { return t(rank.name); }
+function ageOf(s = state) { return (s && Number(s.age)) || 18; }
+function ageLabel(age) { return t('Age {age}', { age }); }
+
+function missingReasonText(action) {
+  if ((state.ap || 0) < action.ap) return t('Requires {n} actions', { n: action.ap });
+  for (const [k, v] of Object.entries(action.cost || {})) {
+    if ((k === 'faith' || k === 'power') && state.stats[k] < v) return t('Requires {n} ' + k, { n: v });
+  }
+  return '';
+}
+
+function actionChronicleText(actionId, res) {
+  if (actionId === 'relic') return t(ACTION_TEXT_ES.relic, { relic: res.relic ? res.relic.name : t('Relic') });
+  if (isEs() && ACTION_TEXT_ES[actionId]) return ACTION_TEXT_ES[actionId];
+  return res.text;
+}
+
+function logText(entry) {
+  return isEs() && entry.textEs ? entry.textEs : entry.text;
+}
+
+function computeMood() {
+  if (!state) return 'serene';
+  if (canAscend(state)) return 'triumphant';
+  if (ageOf() >= 90) return 'ancient';
+  if ((state.followerDelta || 0) < 0) return 'wrathful';
+  if ((state.ap || 0) <= 0) return 'restless';
+  if (ageOf() >= 65) return 'weary';
+  if (state.stats.faith > state.stats.power * 2 || state.rank >= 5) return 'radiant';
+  return 'serene';
+}
+
+function syncLangButtons() {
+  $$('.lang-switch [data-lang]').forEach(b => b.classList.toggle('active', b.dataset.lang === uiLang));
+}
+
+function setLanguage(next) {
+  if (next !== 'es' && next !== 'en') return;
+  if (next === uiLang) return;
+  uiLang = setLang(next);
+  setNumberLocale(uiLang);
+  try { localStorage.setItem('godspire.lang', uiLang); } catch (e) { /* noop */ }
+  applyStatic();
+  syncLangButtons();
+  if (!epithetTouched) {
+    draft.epithet = t(DEFAULT_EPITHETS[draft.domain]);
+    const input = $('#godEpithet');
+    if (input) input.value = draft.epithet;
+  }
+  if (state) {
+    state.locale = uiLang;
+    saveGame();
+    renderGame();
+  }
+  if ($('#screen-create').classList.contains('active')) {
+    renderPanel();
+    renderPreview();
+  }
+  if ($('#screen-title').classList.contains('active')) renderTitle();
+  closeModal();
+  toast(uiLang === 'es' ? 'Idioma: Español' : 'Language: English');
 }
 
 /* ══════════ starfield ══════════ */
@@ -170,15 +243,17 @@ function sampleGod() {
 }
 function renderTitle() {
   let god = null;
+  let save = null;
   try {
     const raw = localStorage.getItem(SAVE_KEY);
-    if (raw) { const save = JSON.parse(raw); if (save && save.god) god = save.god; }
+    if (raw) { save = JSON.parse(raw); if (save && save.god) god = save.god; }
   } catch (e) { /* noop */ }
   if (!god) god = sampleGod();
-  $('#titlePortrait').innerHTML = renderPortrait(god);
+  const age = (save && save.age) || god.age || 0;
+  $('#titlePortrait').innerHTML = renderPortrait(god, { age });
   $('#titleHeroName').textContent = (god.name || 'Aurelion').toUpperCase();
   const plaque = document.querySelector('.hero-plaque span');
-  if (plaque) plaque.textContent = (god.epithet || 'The Stormlord').toUpperCase();
+  if (plaque) plaque.textContent = t(god.epithet || 'The Stormlord').toUpperCase();
   $('#continueBtn').hidden = !hasSave();
 }
 function hasSave() {
@@ -197,11 +272,11 @@ function renderPreview() {
   const l = lineageOf(draft.lineage);
   const r = raceOf(draft.race);
   $('#creatorPortrait').innerHTML = renderPortrait(draft);
-  $('#previewName').textContent = draft.name.trim() || 'The Nameless';
-  $('#previewEpithet').textContent = (draft.epithet.trim() || DEFAULT_EPITHETS[draft.domain]).toUpperCase();
-  $('#previewChips').innerHTML = `<span>${esc(d.name)}</span><span>${esc(l.name)}</span><span>${esc(r.name)}</span><span>${esc(draft.pantheon.trim() || 'The New Order')}</span>`;
+  $('#previewName').textContent = draft.name.trim() || t('The Nameless');
+  $('#previewEpithet').textContent = t(draft.epithet.trim() || DEFAULT_EPITHETS[draft.domain]).toUpperCase();
+  $('#previewChips').innerHTML = `<span>${esc(domainName(d))}</span><span>${esc(lineageName(l))}</span><span>${esc(t(r.name))}</span><span>${esc(draft.pantheon.trim() || t('The New Order'))}</span>`;
   $('#previewGlow').style.background = `radial-gradient(ellipse 70% 45% at 50% 38%, ${rgba(d.color, 0.16)}, transparent 70%)`;
-  $('#buildSummary').innerHTML = `Domain of <b>${esc(d.name)}</b> · <b>${esc(l.name)}</b> · Worshipped by <b>${esc(r.name)}</b><br>${esc(r.desc)} <span style="color:var(--muted-2)">${esc(d.passive)}</span>`;
+  $('#buildSummary').innerHTML = `${t('Domain of')} <b>${esc(domainName(d))}</b> · <b>${esc(lineageName(l))}</b> · ${t('Worshipped by')} <b>${esc(t(r.name))}</b><br>${esc(isEs() && r.descEs ? r.descEs : r.desc)} <span style="color:var(--muted-2)">${esc(t(d.passive))}</span>`;
   creatorAccent();
 }
 
@@ -209,25 +284,25 @@ function groupLabel(title, sub) {
   return `<div class="group-label"><strong>${title}</strong><em>${sub || ''}</em></div>`;
 }
 function swatches(field, list, current) {
-  return `<div class="swatches">${list.map(c => `<button class="swatch${c.hex === current ? ' selected' : ''}" style="background:${c.hex}" data-field="${field}" data-value="${c.hex}" title="${esc(c.name)}" aria-label="${esc(c.name)}"></button>`).join('')}</div>`;
+  return `<div class="swatches">${list.map(c => `<button class="swatch${c.hex === current ? ' selected' : ''}" style="background:${c.hex}" data-field="${field}" data-value="${c.hex}" title="${esc(t(c.name))}" aria-label="${esc(t(c.name))}"></button>`).join('')}</div>`;
 }
 function options(field, list, current) {
-  return `<div class="options">${list.map(o => `<button class="option${o.id === current ? ' selected' : ''}" data-field="${field}" data-value="${o.id}">${esc(o.name)}</button>`).join('')}</div>`;
+  return `<div class="options">${list.map(o => `<button class="option${o.id === current ? ' selected' : ''}" data-field="${field}" data-value="${o.id}">${esc(t(o.name))}</button>`).join('')}</div>`;
 }
 function domainGrid() {
-  return `<div class="domain-grid">${DOMAINS.map(d => `<button class="domain${d.id === draft.domain ? ' selected' : ''}" style="--dc:${d.color}" data-field="domain" data-value="${d.id}"><span style="color:${d.color}">${icon(DOMAIN_ICONS[d.id])}</span><span>${d.name}</span></button>`).join('')}</div>`;
+  return `<div class="domain-grid">${DOMAINS.map(d => `<button class="domain${d.id === draft.domain ? ' selected' : ''}" style="--dc:${d.color}" data-field="domain" data-value="${d.id}"><span style="color:${d.color}">${icon(DOMAIN_ICONS[d.id])}</span><span>${esc(domainName(d))}</span></button>`).join('')}</div>`;
 }
 function lineageCards() {
   return `<div class="lineage-grid">${LINEAGES.map(l => `<button class="option-card${l.id === draft.lineage ? ' selected' : ''}" data-field="lineage" data-value="${l.id}">
-    <div class="oc-top">${icon(l.id === 'titan' ? 'mountain' : l.id === 'celestial' ? 'star4' : l.id === 'chthonic' ? 'skull' : l.id === 'elemental' ? 'gem' : 'flame')}<span class="oc-name">${l.name}</span></div>
-    <p>${esc(l.desc)}</p></button>`).join('')}</div>`;
+    <div class="oc-top">${icon(l.id === 'titan' ? 'mountain' : l.id === 'celestial' ? 'star4' : l.id === 'chthonic' ? 'skull' : l.id === 'elemental' ? 'gem' : 'flame')}<span class="oc-name">${esc(lineageName(l))}</span></div>
+    <p>${esc(t(l.desc))}</p></button>`).join('')}</div>`;
 }
 function raceCards() {
   return `<div class="race-grid">${STARTER_RACES.map(r => {
-    const t = traitOf(r.trait);
+    const tr = traitOf(r.trait);
     return `<button class="option-card${r.id === draft.race ? ' selected' : ''}" data-field="race" data-value="${r.id}">
-      <div class="oc-top" style="color:${r.color}">${icon(RACE_ICONS[r.id] || 'users')}<span class="oc-name" style="color:var(--text)">${r.name}</span></div>
-      <p>${esc(r.desc)}</p><div class="oc-mods">${t.name} · ${esc(t.desc)}</div></button>`;
+      <div class="oc-top" style="color:${r.color}">${icon(RACE_ICONS[r.id] || 'users')}<span class="oc-name" style="color:var(--text)">${esc(t(r.name))}</span></div>
+      <p>${esc(isEs() && r.descEs ? r.descEs : r.desc)}</p><div class="oc-mods">${esc(t(tr.name))} · ${esc(t(tr.desc))}</div></button>`;
   }).join('')}</div>`;
 }
 
@@ -237,48 +312,48 @@ function renderPanel() {
   let html = '';
   if (creatorTab === 'face') {
     html = `
-      ${groupLabel('Skin', 'The hue of a body carved from starlight and clay.')}
+      ${groupLabel(t('Skin'), t('The hue of a body carved from starlight and clay.'))}
       <div class="field-group">${swatches('appearance.skin', SKIN_TONES, a.skin)}</div>
-      ${groupLabel('Face', 'Bone structure is a kind of mythology.')}
+      ${groupLabel(t('Face'), t('Bone structure is a kind of mythology.'))}
       <div class="field-group">${options('appearance.face', APPEARANCE_OPTIONS.faces, a.face)}</div>
-      ${groupLabel('Complexion', 'What mortals see when they dare to look closely.')}
+      ${groupLabel(t('Complexion'), t('What mortals see when they dare to look closely.'))}
       <div class="field-group">${options('appearance.complexion', APPEARANCE_OPTIONS.complexions, a.complexion)}</div>
-      ${groupLabel('Sacred Markings', 'Your sigil written on the flesh.')}
+      ${groupLabel(t('Sacred Markings'), t('Your sigil written on the flesh.'))}
       <div class="field-group">${options('appearance.markings', APPEARANCE_OPTIONS.markings, a.markings)}</div>
-      ${groupLabel('Adornment', 'A crown is a promise the heavens must keep.')}
+      ${groupLabel(t('Adornment'), t('A crown is a promise the heavens must keep.'))}
       <div class="field-group">${options('appearance.crown', APPEARANCE_OPTIONS.crowns, a.crown)}</div>`;
   } else if (creatorTab === 'body') {
     html = `
-      ${groupLabel('Build', 'The silhouette that will fill a thousand statues.')}
+      ${groupLabel(t('Build'), t('The silhouette that will fill a thousand statues.'))}
       <div class="field-group option-card-grid">${APPEARANCE_OPTIONS.builds.map(b => `<button class="option-card${b.id === a.build ? ' selected' : ''}" data-field="appearance.build" data-value="${b.id}">
-        <div class="oc-top">${icon(b.id === 'slender' ? 'moon' : b.id === 'athletic' ? 'shield' : b.id === 'broad' ? 'mountain' : 'crown')}<span class="oc-name">${b.name}</span></div><p>${esc(b.desc)}</p></button>`).join('')}</div>
-      ${groupLabel('Presence', 'The air around you is part of the body.')}
-      <div class="field-group"><div class="toggle-row"><div><strong>Divine radiance</strong><p>A soft glow gathers at your edges.</p></div><button class="switch on" disabled style="opacity:.55"></button></div></div>
-      <p style="font-family:var(--serif);font-style:italic;font-size:11px;color:var(--muted-2);margin-top:4px">Your build shapes the shoulders and chest of every idol carved in your name.</p>`;
+        <div class="oc-top">${icon(b.id === 'slender' ? 'moon' : b.id === 'athletic' ? 'shield' : b.id === 'broad' ? 'mountain' : 'crown')}<span class="oc-name">${t(b.name)}</span></div><p>${esc(t(b.desc))}</p></button>`).join('')}</div>
+      ${groupLabel(t('Presence'), t('The air around you is part of the body.'))}
+      <div class="field-group"><div class="toggle-row"><div><strong>${t('Divine radiance')}</strong><p>${t('A soft glow gathers at your edges.')}</p></div><button class="switch on" disabled style="opacity:.55"></button></div></div>
+      <p style="font-family:var(--serif);font-style:italic;font-size:11px;color:var(--muted-2);margin-top:4px">${t('Your build shapes the shoulders and chest of every idol carved in your name.')}</p>`;
   } else if (creatorTab === 'eyes') {
     html = `
-      ${groupLabel('Shape', 'How you look upon the world.')}
+      ${groupLabel(t('Shape'), t('How you look upon the world.'))}
       <div class="field-group">${options('appearance.eyeShape', APPEARANCE_OPTIONS.eyeShapes, a.eyeShape)}</div>
-      ${groupLabel('Iris', 'The colour mortals will write prophecies about.')}
+      ${groupLabel(t('Iris'), t('The colour mortals will write prophecies about.'))}
       <div class="field-group">${swatches('appearance.eyeColor', EYE_COLORS, a.eyeColor)}</div>
-      ${groupLabel('Divine Light', 'When you are angry, the air remembers.')}
-      <div class="field-group"><div class="toggle-row"><div><strong>Eyes of power</strong><p>A faint luminescence spills from your irises.</p></div><button class="switch${a.glow ? ' on' : ''}" data-toggle="appearance.glow" aria-label="Toggle eye glow"></button></div></div>`;
+      ${groupLabel(t('Divine Light'), t('When you are angry, the air remembers.'))}
+      <div class="field-group"><div class="toggle-row"><div><strong>${t('Eyes of power')}</strong><p>${t('A faint luminescence spills from your irises.')}</p></div><button class="switch${a.glow ? ' on' : ''}" data-toggle="appearance.glow" aria-label="${t('Toggle eye glow')}"></button></div></div>`;
   } else if (creatorTab === 'hair') {
     html = `
-      ${groupLabel('Style', 'A crown of hair, or a crown over none.')}
+      ${groupLabel(t('Style'), t('A crown of hair, or a crown over none.'))}
       <div class="field-group">${options('appearance.hairStyle', APPEARANCE_OPTIONS.hairStyles, a.hairStyle)}</div>
-      ${groupLabel('Colour', 'Raven, wheat, starlight, or something stranger.')}
+      ${groupLabel(t('Colour'), t('Raven, wheat, starlight, or something stranger.'))}
       <div class="field-group">${swatches('appearance.hairColor', HAIR_COLORS, a.hairColor)}</div>
-      <p style="font-family:var(--serif);font-style:italic;font-size:11px;color:var(--muted-2)">Hair grows differently for the divine. It may move in a wind that only you feel.</p>`;
+      <p style="font-family:var(--serif);font-style:italic;font-size:11px;color:var(--muted-2)">${t('Hair grows differently for the divine. It may move in a wind that only you feel.')}</p>`;
   } else {
     html = `
-      ${groupLabel('Domain', 'What you are the god of. This shapes your powers and your passives.')}
+      ${groupLabel(t('Domain'), t('What you are the god of. This shapes your powers and your passives.'))}
       <div class="field-group">${domainGrid()}
-        <p style="font-family:var(--serif);font-style:italic;font-size:11px;color:var(--muted-2);margin-top:9px">${esc(domainOf(draft.domain).passive)}</p>
+        <p style="font-family:var(--serif);font-style:italic;font-size:11px;color:var(--muted-2);margin-top:9px">${esc(t(domainOf(draft.domain).passive))}</p>
       </div>
-      ${groupLabel('Divine Lineage', 'The kind of god you were born to be.')}
+      ${groupLabel(t('Divine Lineage'), t('The kind of god you were born to be.'))}
       <div class="field-group">${lineageCards()}</div>
-      ${groupLabel('Your First People', 'The race that will speak your name first.')}
+      ${groupLabel(t('Your First People'), t('The race that will speak your name first.'))}
       <div class="field-group">${raceCards()}</div>`;
   }
   panels.innerHTML = html;
@@ -351,10 +426,11 @@ function bindCreator() {
 }
 
 function beginGame() {
-  if (!draft.name.trim()) draft.name = 'The Nameless';
-  if (!draft.epithet.trim()) draft.epithet = DEFAULT_EPITHETS[draft.domain];
-  if (!draft.pantheon.trim()) draft.pantheon = 'The New Order';
+  if (!draft.name.trim()) draft.name = t('The Nameless');
+  if (!draft.epithet.trim()) draft.epithet = t(DEFAULT_EPITHETS[draft.domain]);
+  if (!draft.pantheon.trim()) draft.pantheon = t('The New Order');
   state = newGame(draft);
+  state.locale = uiLang;
   saveGame();
   enterGame();
   playSound('ascend');
@@ -380,6 +456,8 @@ function loadSaved() {
     if (!parsed || !parsed.god || typeof parsed.followers !== 'number') return false;
     state = parsed;
     if (!state.lastRanks) state.lastRanks = {};
+    if (!state.age) state.age = 18 + Math.max(0, (state.aeon || 1) - 1) * 3;
+    state.locale = uiLang;
     return true;
   } catch (e) { return false; }
 }
@@ -388,9 +466,9 @@ function changeTags(changes) {
   const parts = [];
   const map = { faith: 'Faith', power: 'Power', wisdom: 'Wisdom', influence: 'Influence' };
   for (const k of ['faith', 'power', 'wisdom', 'influence']) {
-    if (changes[k]) parts.push(`${changes[k] > 0 ? '+' : ''}${changes[k]} ${map[k]}`);
+    if (changes[k]) parts.push(`${changes[k] > 0 ? '+' : ''}${changes[k]} ${t(map[k])}`);
   }
-  if (changes.followers) parts.push(`${changes.followers > 0 ? '+' : ''}${fmt(changes.followers)} souls`);
+  if (changes.followers) parts.push(`${changes.followers > 0 ? '+' : ''}${fmt(changes.followers)} ${t('souls')}`);
   return parts;
 }
 function tagHtml(text, good) {
@@ -409,29 +487,46 @@ function renderGame() {
   screen.style.setProperty('--accent', d.color);
   screen.style.setProperty('--accent-soft', rgba(d.color, 0.15));
 
-  $('#hudCrest').innerHTML = icon(DOMAIN_ICONS[d.id]);
+  const age = ageOf();
+  const mood = computeMood();
+  const moodName = t(mood.charAt(0).toUpperCase() + mood.slice(1));
+  const hudAvatar = $('#hudAvatar');
+  if (hudAvatar) {
+    hudAvatar.dataset.mood = mood;
+    hudAvatar.style.setProperty('--mood', MOOD_COLORS[mood]);
+    hudAvatar.title = t('Mood: {mood} · Age {age}', { mood: moodName, age });
+    hudAvatar.setAttribute('aria-label', hudAvatar.title);
+  }
+  $('#hudAvatarInner').innerHTML = renderPortrait(state.god, { age, crop: 'face' });
+  $('#hudAvatarBadge').innerHTML = icon(DOMAIN_ICONS[d.id]);
+  const moodLine = $('#moodLine');
+  if (moodLine) {
+    moodLine.dataset.mood = mood;
+    moodLine.style.setProperty('--mood', MOOD_COLORS[mood]);
+    moodLine.innerHTML = `<span class="mood-dot"></span><span>${esc(t('{mood} · {age} years', { mood: moodName, age }))}</span>`;
+  }
   $('#hudName').textContent = state.god.name;
-  $('#hudRank').textContent = rank.name;
-  $('#hudEpithet').textContent = `${state.god.epithet} · ${state.god.pantheon}`;
+  $('#hudRank').textContent = rankName(rank);
+  $('#hudEpithet').textContent = `${t(state.god.epithet)} · ${t(state.god.pantheon)} · ${ageLabel(age)}`;
   $('#hudMight').textContent = fmt(might);
   $('#hudStanding').textContent = '#' + stand.rank;
-  $('#hudAeon').textContent = 'Aeon ' + roman(state.aeon);
-  $('#hudDomain').textContent = d.name;
+  $('#hudAeon').textContent = t('Aeon {n}', { n: roman(state.aeon) });
+  $('#hudDomain').textContent = domainName(d);
 
-  $('#gamePortrait').innerHTML = renderPortrait(state.god);
+  $('#gamePortrait').innerHTML = renderPortrait(state.god, { age });
   $('#cardName').textContent = state.god.name;
-  $('#cardSub').textContent = `${rank.name} · ${d.name}`;
+  $('#cardSub').textContent = `${rankName(rank)} · ${domainName(d)} · ${ageLabel(age)}`;
   $('#cardMight').textContent = fmt(might);
   const next = RANKS[state.rank + 1];
   const curNeed = rank.need;
   const pct = next ? Math.max(0, Math.min(100, ((might - curNeed) / (next.need - curNeed)) * 100)) : 100;
   $('#mightBar').style.width = pct + '%';
   if (next && might < next.need) {
-    $('#mightNext').textContent = `${fmt(next.need - might)} more might to become ${next.name}`;
+    $('#mightNext').textContent = t('{n} more might to become {name}', { n: fmt(next.need - might), name: rankName(next) });
   } else if (next) {
-    $('#mightNext').textContent = `The way to ${next.name} is open.`;
+    $('#mightNext').textContent = t('The way to {name} is open.', { name: rankName(next) });
   } else {
-    $('#mightNext').textContent = 'You stand at the summit of the divine order.';
+    $('#mightNext').textContent = t('You stand at the summit of the divine order.');
   }
   $('#cardFollowers').textContent = fmt(state.followers);
   const delta = state.followerDelta || 0;
@@ -439,30 +534,30 @@ function renderGame() {
   $('#followersTrend').className = 'trend' + (delta < 0 ? ' down' : '');
 
   $('#statGrid').innerHTML = ['faith', 'power', 'wisdom', 'influence'].map(k =>
-    `<div class="stat-cell" title="${k}">${icon(STAT_ICONS[k])}<div><span class="sv">${fmt(state.stats[k])}</span><span class="sl">${k}</span></div></div>`).join('');
+    `<div class="stat-cell" title="${esc(t(k.charAt(0).toUpperCase() + k.slice(1)))}">${icon(STAT_ICONS[k])}<div><span class="sv">${fmt(state.stats[k])}</span><span class="sl">${esc(t(k))}</span></div></div>`).join('');
 
   const ascBtn = $('#ascendBtn');
   const ready = canAscend(state);
   if (!next) {
     ascBtn.disabled = true;
     ascBtn.classList.remove('ready');
-    ascBtn.innerHTML = `<span class="asc-main">${icon('crown')} Supreme Architect</span><span class="asc-sub">The summit is yours</span>`;
+    ascBtn.innerHTML = `<span class="asc-main">${icon('crown')} ${esc(t('Supreme Architect'))}</span><span class="asc-sub">${esc(t('The summit is yours'))}</span>`;
   } else if (ready) {
     ascBtn.disabled = false;
     ascBtn.classList.add('ready');
-    ascBtn.innerHTML = `<span class="asc-main">${icon('crown')} Ascend to ${next.name}</span><span class="asc-sub">The heavens are watching</span>`;
+    ascBtn.innerHTML = `<span class="asc-main">${icon('crown')} ${esc(t('Ascend to {name}', { name: rankName(next) }))}</span><span class="asc-sub">${esc(t('The heavens are watching'))}</span>`;
   } else {
     ascBtn.disabled = true;
     ascBtn.classList.remove('ready');
-    ascBtn.innerHTML = `<span class="asc-main">${icon('crown')} Ascend</span><span class="asc-sub">${fmt(next.need - might)} might required</span>`;
+    ascBtn.innerHTML = `<span class="asc-main">${icon('crown')} ${esc(t('Ascend'))}</span><span class="asc-sub">${esc(t('{n} might required', { n: fmt(next.need - might) }))}</span>`;
   }
 
   $('#raceChips').innerHTML = state.races.map((r, i) =>
-    `<button class="race-chip" data-race="${i}" title="${esc(r.traitName)}"><span class="dot" style="background:${r.color};color:${r.color}"></span>${esc(r.name)}</button>`).join('');
+    `<button class="race-chip" data-race="${i}" title="${esc(t(r.traitName))}"><span class="dot" style="background:${r.color};color:${r.color}"></span>${esc(r.name)}</button>`).join('');
   $('#relicList').innerHTML = state.relics.length
     ? state.relics.map((r, i) => `<div class="relic-row" data-relic="${i}">${icon('gem')}<span>${esc(r.name)}</span><b>+${fmt(r.power)}</b></div>`).join('')
-    : `<div class="relic-empty">No relics yet. Make something holy.</div>`;
-  $('#relicCount').textContent = state.relics.length ? `${state.relics.length} forged` : '';
+    : `<div class="relic-empty">${esc(t('No relics yet. Make something holy.'))}</div>`;
+  $('#relicCount').textContent = state.relics.length ? `${state.relics.length} ${t('forged')}` : '';
 
   renderActions();
   renderLog();
@@ -472,19 +567,19 @@ function renderGame() {
 
 function renderActions() {
   $('#apPips').innerHTML = Array.from({ length: apMax(state) }, (_, i) => `<span class="ap-pip${i < state.ap ? ' full' : ''}"></span>`).join('');
-  $('#aeonLabel').textContent = 'Aeon ' + roman(state.aeon);
-  $('#aeonSub').textContent = AEON_TITLES[(state.aeon - 1) % AEON_TITLES.length];
+  $('#aeonLabel').textContent = t('Aeon {n}', { n: roman(state.aeon) });
+  $('#aeonSub').textContent = t(AEON_TITLES[(state.aeon - 1) % AEON_TITLES.length]);
   $('#actionsGrid').innerHTML = ACTIONS.map(a => {
     const afford = canAfford(state, a);
-    const reason = missingReason(state, a);
-    const costParts = [`${a.ap} AP`];
-    if (a.cost.faith) costParts.push(`${a.cost.faith} faith`);
-    if (a.cost.power) costParts.push(`${a.cost.power} power`);
+    const reason = missingReasonText(a);
+    const costParts = [t('{n} AP', { n: a.ap })];
+    if (a.cost.faith) costParts.push(t('{n} faith', { n: a.cost.faith }));
+    if (a.cost.power) costParts.push(t('{n} power', { n: a.cost.power }));
     return `<button class="action${afford ? '' : ' disabled'}" data-action="${a.id}" ${reason ? `title="${esc(reason)}"` : ''}>
       <span class="a-icon">${icon(a.glyph)}</span>
       <span class="a-body">
-        <span class="a-name"><strong>${a.name}</strong><span class="a-cost">${costParts.join(' · ')}</span></span>
-        <span class="a-desc">${esc(a.desc)}</span>
+        <span class="a-name"><strong>${esc(t(a.name))}</strong><span class="a-cost">${esc(costParts.join(' · '))}</span></span>
+        <span class="a-desc">${esc(t(a.desc))}</span>
       </span>
     </button>`;
   }).join('');
@@ -492,11 +587,11 @@ function renderActions() {
 
 function renderLog() {
   const entries = state.log.slice(-40).reverse();
-  $('#chronicleMeta').textContent = `${state.log.length} entries · Aeon ${roman(state.aeon)}`;
+  $('#chronicleMeta').textContent = t('{n} entries · Aeon {n2}', { n: state.log.length, n2: roman(state.aeon) });
   $('#logList').innerHTML = entries.map(e =>
     `<div class="log-entry tone-${e.tone || 'divine'}">
       <span class="le-icon">${icon(e.icon || 'star4')}</span>
-      <span class="le-text">${esc(e.text)}</span>
+      <span class="le-text">${esc(logText(e))}</span>
       <span class="le-aeon">${roman(e.aeon)}</span>
     </div>`).join('');
   const log = $('#logList'); if (log) log.scrollTop = 0;
@@ -524,18 +619,18 @@ function renderBoard(stand, might) {
     return `<li class="throne${prow ? ' you' : ''}${playerRank <= 3 ? ' top' : ''}" ${prow ? '' : `data-rival="${state.rivals.findIndex(r => r.name === e.name)}"`}>
       <span class="t-rank">${playerRank}</span>
       <span class="t-sigil" style="color:${dd.color}">${icon(DOMAIN_ICONS[dd.id])}</span>
-      <span class="t-info"><span class="t-name">${esc(prow ? state.god.name : e.name)}${prow ? '<span class="you-tag">YOU</span>' : ''}</span><span class="t-sub">${dd.name} · ${esc(e.pantheon)}</span></span>
+      <span class="t-info"><span class="t-name">${esc(prow ? state.god.name : e.name)}${prow ? `<span class="you-tag">${esc(t('YOU'))}</span>` : ''}</span><span class="t-sub">${esc(domainName(dd))} · ${esc(t(e.pantheon))}</span></span>
       <span class="t-might">${fmt(e.might)}${trend}</span>
     </li>`;
   }).join('');
   $('#leaderboard').innerHTML = rows;
   $('#boardCrown').innerHTML = icon('crown');
-  $('#playerStanding').innerHTML = `<span class="standing-text">Your standing</span><span class="standing-badge">#${stand.rank} <span style="color:var(--muted-2);font-size:9px">of ${stand.total}</span></span>`;
+  $('#playerStanding').innerHTML = `<span class="standing-text">${esc(t('Your standing'))}</span><span class="standing-badge">#${stand.rank} <span style="color:var(--muted-2);font-size:9px">${esc(t('of {n}', { n: stand.total }))}</span></span>`;
   if (playerIndex >= 20) {
     const note = document.createElement('div');
     note.className = 'standing-text';
     note.style.padding = '6px 4px 0';
-    note.innerHTML = `You are outside the Twenty Thrones. <b>${fmt(might)}</b> might.`;
+    note.innerHTML = t('You are outside the Twenty Thrones. <b>{n}</b> might.', { n: fmt(might) });
     $('#playerStanding').prepend(note);
   }
 }
@@ -558,27 +653,27 @@ function bindGame() {
     const action = ACTIONS.find(a => a.id === card.dataset.action); if (!action) return;
     if (action.special === 'race') { openRaceForge(); return; }
     if (!canAfford(state, action)) {
-      toast(missingReason(state, action) || 'The heavens are not yet ready.', true);
+      toast(missingReasonText(action) || t('The heavens are not yet ready.'), true);
       playSound('error');
       return;
     }
     const res = performAction(state, action.id);
-    if (!res.ok) { toast(res.error, true); playSound('error'); return; }
+    if (!res.ok) { toast(t(res.error), true); playSound('error'); return; }
     state.followerDelta = res.changes ? res.changes.followers || 0 : 0;
-    addLog(state, action.glyph, res.text, toneForAction(action.id));
+    addLog(state, action.glyph, res.text, toneForAction(action.id), actionChronicleText(action.id, res));
     renderGame();
     flashAction(action.id);
     playSound('action');
-    const summary = res.changes ? changeTags(res.changes).slice(0, 3).join(' · ') : (res.relic ? res.relic.name : 'Done');
-    toast(summary || action.name);
-    if (canAscend(state)) toast(`The way to ${RANKS[state.rank + 1].name} is open`, false);
+    const summary = res.changes ? changeTags(res.changes).slice(0, 3).join(' · ') : (res.relic ? res.relic.name : t('Done'));
+    toast(summary || t(action.name));
+    if (canAscend(state)) toast(t('The way to {name} is open', { name: rankName(RANKS[state.rank + 1]) }), false);
     if (res.relic) setTimeout(() => openRelicModal(res.relic), 420);
   });
 
   $('#openRaceBtn').addEventListener('click', openRaceForge);
   $('#ascendBtn').addEventListener('click', () => {
     if (!canAscend(state)) {
-      toast('You are not yet mighty enough to ascend.', true);
+      toast(t('You are not yet mighty enough to ascend.'), true);
       playSound('error');
       return;
     }
@@ -598,9 +693,9 @@ function bindGame() {
     state.followerDelta = res.gains.followers;
     renderGame();
     playSound('turn');
-    toast(`Aeon ${roman(state.aeon)} begins · +${fmt(res.gains.followers)} souls`);
+    toast(t('Aeon {n} begins · +{n2} souls', { n: roman(state.aeon), n2: fmt(res.gains.followers) }));
     if (res.event) setTimeout(() => openEventModal(res.event), 480);
-    else if (canAscend(state)) setTimeout(() => toast(`The way to ${RANKS[state.rank + 1].name} is open`), 600);
+    else if (canAscend(state)) setTimeout(() => toast(t('The way to {name} is open', { name: rankName(RANKS[state.rank + 1]) })), 600);
     saveGame();
   });
 
@@ -609,7 +704,7 @@ function bindGame() {
     try { localStorage.setItem('godspire.sound', soundOn ? 'on' : 'off'); } catch (e) { /* noop */ }
     updateSoundButton();
     if (soundOn) playSound('click');
-    toast(soundOn ? 'Sound on' : 'Sound off');
+    toast(t(soundOn ? 'Sound on' : 'Sound off'));
   });
   $('#menuBtn').innerHTML = icon('menu');
   $('#menuBtn').addEventListener('click', openMenu);
@@ -651,7 +746,7 @@ function openModal(inner, cls = '') {
   const bd = $('#modalRoot').firstElementChild;
   bd.addEventListener('click', e => { if (e.target === bd) closeModal(); });
 }
-function closeBtn() { return `<button class="modal-close" data-close aria-label="Close">${icon('close')}</button>`; }
+function closeBtn() { return `<button class="modal-close" data-close aria-label="${esc(t('Close'))}">${icon('close')}</button>`; }
 function affordableEffects(effects = {}) {
   for (const k of ['faith', 'power']) {
     if (effects[k] < 0 && state.stats[k] < -effects[k]) return false;
@@ -661,16 +756,17 @@ function affordableEffects(effects = {}) {
 function effectTags(effects = {}) {
   const out = [];
   for (const [k, label] of [['faith', 'Faith'], ['power', 'Power'], ['wisdom', 'Wisdom'], ['influence', 'Influence']]) {
-    if (effects[k]) out.push(tagHtml(`${effects[k] > 0 ? '+' : ''}${effects[k]} ${label}`, effects[k] > 0));
+    if (effects[k]) out.push(tagHtml(`${effects[k] > 0 ? '+' : ''}${effects[k]} ${t(label)}`, effects[k] > 0));
   }
-  if (effects.followersPct) out.push(tagHtml(`${effects.followersPct > 0 ? '+' : ''}${Math.round(effects.followersPct * 100)}% Souls`, effects.followersPct > 0));
-  if (effects.relic) out.push(tagHtml('+ Relic', true));
+  if (effects.followersPct) out.push(tagHtml(t('{n}% Souls', { n: (effects.followersPct > 0 ? '+' : '') + Math.round(effects.followersPct * 100) }), effects.followersPct > 0));
+  if (effects.relic) out.push(tagHtml(t('+ Relic'), true));
   return out.join('');
 }
 
-function openEventModal(ev) {
+function openEventModal(rawEv) {
+  const ev = localizedEvent(rawEv);
   openModal(`${closeBtn()}
-    <div class="modal-kicker">Aeon ${roman(state.aeon)} · Omen</div>
+    <div class="modal-kicker">${esc(t('Aeon {n} · Omen', { n: roman(state.aeon) }))}</div>
     <h2>${esc(ev.title)}</h2>
     <p class="modal-text">${esc(ev.text)}</p>
     <div class="choice-list">${ev.choices.map((c, i) => {
@@ -682,9 +778,11 @@ function openEventModal(ev) {
     }).join('')}</div>`);
   $$('#modalRoot .choice').forEach(btn => btn.addEventListener('click', () => {
     if (btn.disabled) return;
-    const choice = ev.choices[Number(btn.dataset.choice)];
+    const choiceIndex = Number(btn.dataset.choice);
+    const choice = ev.choices[choiceIndex];
     const out = applyEventChoice(state, choice);
-    addLog(state, 'star4', out.result, 'divine');
+    const enResult = (rawEv.choices[choiceIndex] && rawEv.choices[choiceIndex].result) || out.result;
+    addLog(state, 'star4', enResult, 'divine', out.result);
     state.followerDelta = out.changes.followers || 0;
     renderGame();
     saveGame();
@@ -693,34 +791,34 @@ function openEventModal(ev) {
     openModal(`${closeBtn()}
       <div class="modal-kicker">${esc(ev.title)}</div>
       <p class="modal-text">${esc(out.result)}</p>
-      ${out.relic ? `<p class="modal-text" style="color:var(--gold)">You also gain the relic <b>${esc(out.relic.name)}</b>.</p>` : ''}
-      <div class="result-changes">${tags || tagHtml('The story moves on', true)}</div>
-      <div class="modal-actions"><button class="btn primary" data-close>Continue</button></div>`);
-    if (canAscend(state)) setTimeout(() => toast(`The way to ${RANKS[state.rank + 1].name} is open`), 400);
+      ${out.relic ? `<p class="modal-text" style="color:var(--gold)">${t('You also gain the relic <b>{relic}</b>.', { relic: esc(out.relic.name) })}</p>` : ''}
+      <div class="result-changes">${tags || tagHtml(t('The story moves on'), true)}</div>
+      <div class="modal-actions"><button class="btn primary" data-close>${esc(t('Continue'))}</button></div>`);
+    if (canAscend(state)) setTimeout(() => toast(t('The way to {name} is open', { name: rankName(RANKS[state.rank + 1]) })), 400);
   }));
 }
 
 function openAscendModal(info, victory) {
   const gains = [
-    tagHtml('+' + fmt(info.gainedMight) + ' Might', true),
-    tagHtml('+18% Souls', true),
-    tagHtml('+12 Faith', true),
-    tagHtml('+7 Power', true),
-    tagHtml('+7 Wisdom', true),
-    tagHtml('+5 Influence', true),
+    tagHtml(t('+{n} Might', { n: fmt(info.gainedMight) }), true),
+    tagHtml(t('+18% Souls'), true),
+    tagHtml(t('+12 Faith'), true),
+    tagHtml(t('+7 Power'), true),
+    tagHtml(t('+7 Wisdom'), true),
+    tagHtml(t('+5 Influence'), true),
   ].join('');
   const victoryText = victory
-    ? `<p class="modal-text">The Twenty Thrones are silent. One by one, the elder powers incline their heads. The mortal world will tell this story until the last star burns out — the story of the god who climbed from a single prayer to the hand that turns the wheel of myth.</p>`
-    : `<p class="modal-text">${esc(info.to.lore)}</p>`;
+    ? `<p class="modal-text">${esc(t('The Twenty Thrones are silent. One by one, the elder powers incline their heads. The mortal world will tell this story until the last star burns out — the story of the god who climbed from a single prayer to the hand that turns the wheel of myth.'))}</p>`
+    : `<p class="modal-text">${esc(t(info.to.lore))}</p>`;
   openModal(`<div class="ascend-glyph">${icon(victory ? 'wheel' : 'crown')}</div>
-    <div class="modal-kicker">${victory ? 'The summit of the divine order' : `Aeon ${roman(state.aeon)} · Apotheosis`}</div>
-    <h2>${victory ? 'Supreme Architect' : esc(info.to.name)}</h2>
-    <div class="new-rank">${esc(info.from.name)} → ${esc(info.to.name)}</div>
+    <div class="modal-kicker">${esc(victory ? t('The summit of the divine order') : t('Aeon {n} · Apotheosis', { n: roman(state.aeon) }))}</div>
+    <h2>${esc(victory ? t('Supreme Architect') : rankName(info.to))}</h2>
+    <div class="new-rank">${esc(rankName(info.from))} → ${esc(rankName(info.to))}</div>
     ${victoryText}
     <div class="ascend-gains">${gains}</div>
     <div class="modal-actions">${victory
-      ? `<button class="btn ghost" data-new>Begin a New Myth</button><button class="btn primary" data-close>Continue Eternally</button>`
-      : `<button class="btn primary" data-close>Take Your Place</button>`}</div>`,
+      ? `<button class="btn ghost" data-new>${esc(t('Begin a New Myth'))}</button><button class="btn primary" data-close>${esc(t('Continue Eternally'))}</button>`
+      : `<button class="btn primary" data-close>${esc(t('Take Your Place'))}</button>`}</div>`,
     'ascend-modal' + (victory ? ' victory' : ''));
   const newBtn = $('#modalRoot [data-new]');
   if (newBtn) newBtn.addEventListener('click', () => { closeModal(); startNewGodFlow(); });
@@ -745,38 +843,38 @@ function openRivalModal(r) {
   const entries = [...state.rivals, { name: state.god.name, might: computeMight(state), player: true }].sort((a, b) => b.might - a.might);
   const rank = entries.findIndex(e => e.name === r.name && !e.player) + 1;
   openModal(`${closeBtn()}
-    <div class="modal-kicker">${esc(r.pantheon)} · ${dd.name} deity</div>
+    <div class="modal-kicker">${esc(t('{domain} deity', { domain: domainName(dd) }))} · ${esc(t(r.pantheon))}</div>
     <div class="rival-card" style="--accent:${dd.color};--accent-soft:${rgba(dd.color, 0.16)}">
       <div class="rival-sigil">${icon(DOMAIN_ICONS[dd.id])}</div>
-      <div><h2 style="font-size:28px">${esc(r.name)}</h2><div class="rival-meta">${esc(r.epithet)}</div><div class="rival-might">${fmt(r.might)} <span style="font-size:10px;font-family:var(--sans);letter-spacing:.12em;color:var(--muted-2)">MIGHT · #${rank}</span></div></div>
+      <div><h2 style="font-size:28px">${esc(r.name)}</h2><div class="rival-meta">${esc(t(r.epithet))}</div><div class="rival-might">${fmt(r.might)} <span style="font-size:10px;font-family:var(--sans);letter-spacing:.12em;color:var(--muted-2)">${esc(t('MIGHT'))} · #${rank}</span></div></div>
     </div>
-    <p class="modal-text" style="margin-top:18px">${esc(lore[r.domain] || 'They watch your rise with the patience of something older than patience.')}</p>
-    <div class="result-changes">${tagHtml(dd.name + ' domain', true)}${tagHtml('Cult growth +' + Math.round(r.growth * 1000) / 10 + '% / aeon')}</div>
-    <div class="modal-actions"><button class="btn ghost" data-close>Withdraw</button></div>`);
+    <p class="modal-text" style="margin-top:18px">${esc(t(lore[r.domain] || 'They watch your rise with the patience of something older than patience.'))}</p>
+    <div class="result-changes">${tagHtml(t('{domain} domain', { domain: domainName(dd) }), true)}${tagHtml(t('Cult growth +{n}% / aeon', { n: Math.round(r.growth * 1000) / 10 }))}</div>
+    <div class="modal-actions"><button class="btn ghost" data-close>${esc(t('Withdraw'))}</button></div>`);
 }
 
 
 
 function modsText(mods = {}) {
   const out = [];
-  if (mods.growth) out.push(`+${Math.round(mods.growth * 100)}% follower growth`);
-  if (mods.faithPerAeon) out.push(`+${mods.faithPerAeon} faith / aeon`);
-  if (mods.powerPerAeon) out.push(`+${mods.powerPerAeon} power / aeon`);
-  if (mods.wisdomPerAeon) out.push(`+${mods.wisdomPerAeon} wisdom / aeon`);
-  if (mods.influencePerAeon) out.push(`+${mods.influencePerAeon} influence / aeon`);
+  if (mods.growth) out.push(t('+{n}% follower growth', { n: Math.round(mods.growth * 100) }));
+  if (mods.faithPerAeon) out.push(t('+{n} faith / aeon', { n: mods.faithPerAeon }));
+  if (mods.powerPerAeon) out.push(t('+{n} power / aeon', { n: mods.powerPerAeon }));
+  if (mods.wisdomPerAeon) out.push(t('+{n} wisdom / aeon', { n: mods.wisdomPerAeon }));
+  if (mods.influencePerAeon) out.push(t('+{n} influence / aeon', { n: mods.influencePerAeon }));
   return out;
 }
 
 function openMenu() {
   openModal(`${closeBtn()}
-    <div class="modal-kicker">Aeon ${roman(state.aeon)} · ${RANKS[state.rank].name}</div>
-    <h2>The Chronicle Paused</h2>
+    <div class="modal-kicker">${esc(t('Aeon {n}', { n: roman(state.aeon) }))} · ${esc(rankName(RANKS[state.rank]))}</div>
+    <h2>${esc(t('The Chronicle Paused'))}</h2>
     <div class="menu-list">
-      <button class="menu-item" data-close>${icon('book')}<div class="mi-text"><strong>Resume the chronicle</strong><span>Return to your divine work.</span></div></button>
-      <button class="menu-item" id="menuGuide">${icon('scale')}<div class="mi-text"><strong>How to play</strong><span>The loop, the ranks, the throne.</span></div></button>
-      <button class="menu-item" id="menuSound">${icon(soundOn ? 'sound' : 'mute')}<div class="mi-text"><strong>Sound: ${soundOn ? 'on' : 'off'}</strong><span>A little music between prayers.</span></div></button>
-      <button class="menu-item" id="menuSave">${icon('star4')}<div class="mi-text"><strong>Save &amp; return to title</strong><span>Your chronicle is stored in this browser.</span></div></button>
-      <button class="menu-item" id="menuNew">${icon('flame')}<div class="mi-text"><strong>Begin a new myth</strong><span>Cast this god aside and start over.</span></div></button>
+      <button class="menu-item" data-close>${icon('book')}<div class="mi-text"><strong>${esc(t('Resume the chronicle'))}</strong><span>${esc(t('Return to your divine work.'))}</span></div></button>
+      <button class="menu-item" id="menuGuide">${icon('scale')}<div class="mi-text"><strong>${esc(t('How to Play'))}</strong><span>${esc(t('The loop, the ranks, the throne.'))}</span></div></button>
+      <button class="menu-item" id="menuSound">${icon(soundOn ? 'sound' : 'mute')}<div class="mi-text"><strong>${esc(t(soundOn ? 'Sound: on' : 'Sound: off'))}</strong><span>${esc(t('A little music between prayers.'))}</span></div></button>
+      <button class="menu-item" id="menuSave">${icon('star4')}<div class="mi-text"><strong>${esc(t('Save &amp; return to title'))}</strong><span>${esc(t('Your chronicle is stored in this browser.'))}</span></div></button>
+      <button class="menu-item" id="menuNew">${icon('flame')}<div class="mi-text"><strong>${esc(t('Begin a new myth'))}</strong><span>${esc(t('Cast this god aside and start over.'))}</span></div></button>
     </div>`);
   $('#menuGuide').addEventListener('click', openGuide);
   $('#menuSound').addEventListener('click', () => {
@@ -791,54 +889,54 @@ function openMenu() {
     closeModal();
     showScreen('screen-title');
     renderTitle();
-    toast('Chronicle saved');
+    toast(t('Chronicle saved'));
   });
   $('#menuNew').addEventListener('click', openNewGodConfirm);
 }
 
 function openNewGodConfirm() {
   openModal(`${closeBtn()}
-    <div class="modal-kicker">A clean slate</div>
-    <h2>Abandon This Myth?</h2>
-    <p class="modal-text">Your current chronicle will be overwritten when you create a new god. The old story will be lost to the void.</p>
-    <div class="modal-actions"><button class="btn ghost" data-close>Keep this chronicle</button><button class="btn primary" id="confirmNewGod">Begin anew</button></div>`);
+    <div class="modal-kicker">${esc(t('A clean slate'))}</div>
+    <h2>${esc(t('Abandon This Myth?'))}</h2>
+    <p class="modal-text">${esc(t('Your current chronicle will be overwritten when you create a new god. The old story will be lost to the void.'))}</p>
+    <div class="modal-actions"><button class="btn ghost" data-close>${esc(t('Keep this chronicle'))}</button><button class="btn primary" id="confirmNewGod">${esc(t('Begin anew'))}</button></div>`);
   $('#confirmNewGod').addEventListener('click', () => { closeModal(); startNewGodFlow(); });
 }
 
 function openGuide() {
   openModal(`${closeBtn()}
-    <div class="modal-kicker">The divine handbook</div>
-    <h2>How to Play</h2>
+    <div class="modal-kicker">${esc(t('The divine handbook'))}</div>
+    <h2>${esc(t('How to Play'))}</h2>
     <div class="guide-section">
-      <h3>1 · Shape a god</h3>
-      <p>Choose a face, body, eyes, hair, domain, lineage, and the first race that will worship you. Every choice changes both your portrait and your passives.</p>
+      <h3>${esc(t('1 · Shape a god'))}</h3>
+      <p>${esc(t('Choose a face, body, eyes, hair, domain, lineage, and the first race that will worship you. Every choice changes both your portrait and your passives.'))}</p>
     </div>
     <div class="guide-section">
-      <h3>2 · Spend your aeons</h3>
-      <p>Each aeon grants 3 divine actions. Answer prayers, work miracles, forge relics, or breathe a new race into being. When you end the aeon, your followers grow, your rivals grow, and an omen may demand a choice.</p>
+      <h3>${esc(t('2 · Spend your aeons'))}</h3>
+      <p>${esc(t('Each aeon grants 3 divine actions. Answer prayers, work miracles, forge relics, or breathe a new race into being. When you end the aeon, your followers grow, your rivals grow, and an omen may demand a choice.'))}</p>
     </div>
     <div class="guide-section">
-      <h3>3 · Ascend</h3>
-      <p>Divine Might is your score. When it crosses the threshold, ascend to the next rank. Ascension grants a surge of power and extra actions at higher ranks.</p>
-      <div class="guide-ranks">${RANKS.map(r => `<span>${r.name}</span>`).join('')}</div>
+      <h3>${esc(t('3 · Ascend'))}</h3>
+      <p>${esc(t('Divine Might is your score. When it crosses the threshold, ascend to the next rank. Ascension grants a surge of power and extra actions at higher ranks.'))}</p>
+      <div class="guide-ranks">${RANKS.map(r => `<span>${esc(rankName(r))}</span>`).join('')}</div>
     </div>
     <div class="guide-section">
-      <h3>4 · Claim a throne</h3>
-      <p>The Twenty Thrones rank every god by Divine Might. Rivals scheme and grow every aeon. Reach <b style="color:var(--gold)">Supreme Architect</b> and stand above them all.</p>
+      <h3>${esc(t('4 · Claim a throne'))}</h3>
+      <p>${t('The Twenty Thrones rank every god by Divine Might. Rivals scheme and grow every aeon. Reach <b style="color:var(--gold)">Supreme Architect</b> and stand above them all.')}</p>
     </div>
     <div class="guide-section">
-      <h3>5 · Build a people</h3>
-      <p>Forge custom races in the Genesis Forge. Each race adds permanent passive bonuses, and only four can hold your name.</p>
+      <h3>${esc(t('5 · Build a people'))}</h3>
+      <p>${esc(t('Forge custom races in the Genesis Forge. Each race adds permanent passive bonuses, and only four can hold your name.'))}</p>
     </div>
-    <div class="modal-actions"><button class="btn primary" data-close>Return to the myth</button></div>`);
+    <div class="modal-actions"><button class="btn primary" data-close>${esc(t('Return to the myth'))}</button></div>`);
 }
 
 function openRaceForge() {
   if (!state) return;
-  if (state.races.length >= 4) { toast('Four races already hold your name. The forge is closed.', true); playSound('error'); return; }
+  if (state.races.length >= 4) { toast(t('Four races already hold your name. The forge is closed.'), true); playSound('error'); return; }
   const action = ACTIONS.find(a => a.id === 'race');
   if (!canAfford(state, action)) {
-    toast(missingReason(state, action) || 'The forge demands more.', true);
+    toast(missingReasonText(action) || t('The forge demands more.'), true);
     playSound('error');
     return;
   }
@@ -851,31 +949,31 @@ function openRaceForge() {
   const colors = ['#e7c27a', '#9fd9c4', '#74d4d0', '#ff9c66', '#cdb8ff', '#ff7a7a', '#8ee6a8', '#7fb8ff', '#f2d9a0', '#e39a6f'];
   const traits = TRAITS;
   openModal(`${closeBtn()}
-    <div class="modal-kicker">The Genesis Forge</div>
-    <h2>Forge a New Race</h2>
-    <p class="modal-text" style="font-size:14px">Clay, starlight, and a whispered name. Choose what kind of people will look up at you.</p>
+    <div class="modal-kicker">${esc(t('The Genesis Forge'))}</div>
+    <h2>${esc(t('Forge a New Race'))}</h2>
+    <p class="modal-text" style="font-size:14px">${esc(t('Clay, starlight, and a whispered name. Choose what kind of people will look up at you.'))}</p>
     <div class="modal-body">
       <div class="forge-preview">
         <div class="forge-sigil" id="forgeSigil" style="color:${f.color};border-color:${rgba(f.color, 0.4)};background:${rgba(f.color, 0.12)}">${icon(f.glyph)}</div>
-        <div><strong id="forgePreviewName">An Unnamed People</strong><span id="forgePreviewMeta">Industrious · Humanoid</span></div>
+        <div><strong id="forgePreviewName">${esc(t('An Unnamed People'))}</strong><span id="forgePreviewMeta">${esc(t('Industrious'))} · ${esc(t('Humanoid'))}</span></div>
       </div>
-      <div class="field" style="margin-top:12px"><span>Race name</span><input id="forgeName" maxlength="22" placeholder="e.g. The Glassborn" autocomplete="off" /></div>
+      <div class="field" style="margin-top:12px"><span>${esc(t('Race name'))}</span><input id="forgeName" maxlength="22" placeholder="${esc(t('e.g. The Glassborn'))}" autocomplete="off" /></div>
       <div class="forge-grid" style="margin-top:12px">
-        <div><div class="group-label"><strong>Sigil</strong></div><div class="glyph-picker">${glyphs.map(g => `<button class="glyph-pick${g === f.glyph ? ' selected' : ''}" data-glyph="${g}">${icon(g)}</button>`).join('')}</div></div>
-        <div><div class="group-label"><strong>Colour</strong></div><div class="swatches">${colors.map(c => `<button class="swatch${c === f.color ? ' selected' : ''}" style="background:${c}" data-color="${c}"></button>`).join('')}</div></div>
+        <div><div class="group-label"><strong>${esc(t('Sigil'))}</strong></div><div class="glyph-picker">${glyphs.map(g => `<button class="glyph-pick${g === f.glyph ? ' selected' : ''}" data-glyph="${g}">${icon(g)}</button>`).join('')}</div></div>
+        <div><div class="group-label"><strong>${esc(t('Colour'))}</strong></div><div class="swatches">${colors.map(c => `<button class="swatch${c === f.color ? ' selected' : ''}" style="background:${c}" data-color="${c}"></button>`).join('')}</div></div>
       </div>
-      <div class="group-label" style="margin-top:14px"><strong>Nature</strong><em>A permanent passive for your god.</em></div>
-      <div class="trait-grid">${traits.map(t => `<button class="trait${t.id === f.trait ? ' selected' : ''}" data-trait="${t.id}"><strong>${icon(TRAIT_ICONS[t.id])}${t.name}</strong>${t.desc}</button>`).join('')}</div>
-      <div class="group-label" style="margin-top:14px"><strong>Form</strong></div>
-      <div class="options">${forms.map((fo, i) => `<button class="option${i === 0 ? ' selected' : ''}" data-form="${i}">${fo.name}</button>`).join('')}</div>
-      <div class="forge-cost">Costs <b>2 actions</b>, <b>30 faith</b> and <b>12 power</b>. Grants <b>+18% souls</b> immediately.</div>
+      <div class="group-label" style="margin-top:14px"><strong>${esc(t('Nature'))}</strong><em>${esc(t('A permanent passive for your god.'))}</em></div>
+      <div class="trait-grid">${traits.map(tr => `<button class="trait${tr.id === f.trait ? ' selected' : ''}" data-trait="${tr.id}"><strong>${icon(TRAIT_ICONS[tr.id])}${esc(t(tr.name))}</strong>${esc(t(tr.desc))}</button>`).join('')}</div>
+      <div class="group-label" style="margin-top:14px"><strong>${esc(t('Form'))}</strong></div>
+      <div class="options">${forms.map((fo, i) => `<button class="option${i === 0 ? ' selected' : ''}" data-form="${i}">${esc(t(fo.name))}</button>`).join('')}</div>
+      <div class="forge-cost">${t('Costs <b>2 actions</b>, <b>30 faith</b> and <b>12 power</b>. Grants <b>+18% souls</b> immediately.')}</div>
     </div>
-    <div class="modal-actions"><button class="btn ghost" data-close>Leave the forge</button><button class="btn primary" id="forgeConfirm" disabled>Breathe Life</button></div>`);
+    <div class="modal-actions"><button class="btn ghost" data-close>${esc(t('Leave the forge'))}</button><button class="btn primary" id="forgeConfirm" disabled>${esc(t('Breathe Life'))}</button></div>`);
 
   const syncPreview = () => {
     const trait = traitOf(f.trait);
-    $('#forgePreviewName').textContent = f.name.trim() || 'An Unnamed People';
-    $('#forgePreviewMeta').textContent = `${trait.name} · ${f.form}`;
+    $('#forgePreviewName').textContent = f.name.trim() || t('An Unnamed People');
+    $('#forgePreviewMeta').textContent = `${t(trait.name)} · ${t(f.form)}`;
     $('#forgeSigil').style.color = f.color;
     $('#forgeSigil').style.borderColor = rgba(f.color, 0.4);
     $('#forgeSigil').style.background = rgba(f.color, 0.12);
@@ -905,7 +1003,7 @@ function openRaceForge() {
   }));
   $('#forgeConfirm').addEventListener('click', () => {
     if (!f.name.trim()) return;
-    if (!canAfford(state, action)) { toast(missingReason(state, action), true); return; }
+    if (!canAfford(state, action)) { toast(missingReasonText(action), true); return; }
     const trait = traitOf(f.trait);
     state.ap -= action.ap;
     state.stats.faith -= 30;
@@ -916,36 +1014,39 @@ function openRaceForge() {
       id: 'custom-' + Date.now(), name: f.name.trim(), glyph: f.glyph, color: f.color, form: f.form, ears: f.ears,
       trait: trait.id, traitName: trait.name, mods: { ...trait.mods }, custom: true, founded: state.aeon,
     });
-    addLog(state, 'users', `From clay and starlight you forge the ${f.name.trim()}. Their first prayer is a child's laugh, and it is answered.`, 'divine');
+    addLog(state, 'users',
+      `From clay and starlight you forge the ${f.name.trim()}. Their first prayer is a child's laugh, and it is answered.`,
+      'divine',
+      `Con barro y luz de estrellas forjas a los ${f.name.trim()}. Su primera plegaria es la risa de un niño, y es respondida.`);
     closeModal();
     renderGame();
     saveGame();
     playSound('ascend');
-    toast(`The ${f.name.trim()} now worship you`);
-    if (canAscend(state)) setTimeout(() => toast(`The way to ${RANKS[state.rank + 1].name} is open`), 700);
+    toast(t('The {race} now worship you', { race: f.name.trim() }));
+    if (canAscend(state)) setTimeout(() => toast(t('The way to {name} is open', { name: rankName(RANKS[state.rank + 1]) })), 700);
   });
 }
 
 function openRaceDetail(r) {
   const mods = modsText(r.mods).map(m => tagHtml(m, true)).join('');
   openModal(`${closeBtn()}
-    <div class="modal-kicker">${r.custom ? 'A race of your making' : 'Your first people'}</div>
+    <div class="modal-kicker">${esc(t(r.custom ? 'A race of your making' : 'Your first people'))}</div>
     <div class="race-detail">
       <div class="forge-sigil" style="width:60px;height:60px;color:${r.color};border-color:${rgba(r.color, 0.4)};background:${rgba(r.color, 0.12)}">${icon(r.glyph || RACE_ICONS[r.id] || 'users')}</div>
-      <div><h2 style="font-size:27px">${esc(r.name)}</h2><div class="rival-meta">${esc(r.form || 'Mortal')} · ${esc(r.traitName)}</div></div>
+      <div><h2 style="font-size:27px">${esc(r.name)}</h2><div class="rival-meta">${esc(t(r.form || 'Mortal'))} · ${esc(t(r.traitName))}</div></div>
     </div>
-    <p class="modal-text" style="font-size:14px">They build their lives around your name. Their prayers arrive with every dawn, and their gifts accumulate in the dark of your temple.</p>
-    <div class="result-changes">${mods || tagHtml('Faithful and true', true)}${r.founded ? tagHtml(`Adopted in Aeon ${roman(r.founded)}`) : ''}</div>
-    <div class="modal-actions"><button class="btn ghost" data-close>Close</button></div>`);
+    <p class="modal-text" style="font-size:14px">${esc(t('They build their lives around your name. Their prayers arrive with every dawn, and their gifts accumulate in the dark of your temple.'))}</p>
+    <div class="result-changes">${mods || tagHtml(t('Faithful and true'), true)}${r.founded ? tagHtml(t('Adopted in Aeon {n}', { n: roman(r.founded) })) : ''}</div>
+    <div class="modal-actions"><button class="btn ghost" data-close>${esc(t('Close'))}</button></div>`);
 }
 
 function openRelicModal(r) {
   openModal(`${closeBtn()}
-    <div class="modal-kicker">Relic of your making</div>
+    <div class="modal-kicker">${esc(t('Relic of your making'))}</div>
     <h2>${esc(r.name)}</h2>
-    <p class="modal-text">A piece of the world made holy. It remembers being something else, and it hums when you are angry.</p>
-    <div class="result-changes">${tagHtml('+' + fmt(r.power) + ' Divine Might', true)}${tagHtml('Forged by your hand', true)}</div>
-    <div class="modal-actions"><button class="btn ghost" data-close>Return it to the altar</button></div>`);
+    <p class="modal-text">${esc(t('A piece of the world made holy. It remembers being something else, and it hums when you are angry.'))}</p>
+    <div class="result-changes">${tagHtml(t('+{n} Might', { n: fmt(r.power) }), true)}${tagHtml(t('Forged by your hand'), true)}</div>
+    <div class="modal-actions"><button class="btn ghost" data-close>${esc(t('Return it to the altar'))}</button></div>`);
 }
 
 function startNewGodFlow() {
@@ -955,7 +1056,7 @@ function startNewGodFlow() {
   $('#godEpithet').value = draft.epithet;
   $('#godPantheon').value = draft.pantheon;
   creatorTab = 'face';
-  $$('#creatorTabs .tab').forEach(t => t.classList.toggle('active', t.dataset.tab === 'face'));
+  $$('#creatorTabs .tab').forEach(tab => tab.classList.toggle('active', tab.dataset.tab === 'face'));
   renderPanel();
   renderPreview();
   showScreen('screen-create');
@@ -964,10 +1065,10 @@ function startNewGodFlow() {
 function continueGame() {
   if (loadSaved()) {
     enterGame();
-    toast('Chronicle resumed');
+    toast(t('Chronicle resumed'));
     playSound('omen');
   } else {
-    toast('No chronicle found', true);
+    toast(t('No chronicle found'), true);
     renderTitle();
   }
 }
@@ -976,6 +1077,8 @@ function continueGame() {
 function init() {
   initStars();
   updateSoundButton();
+  applyStatic();
+  syncLangButtons();
   renderTitle();
   bindCreator();
   bindGame();
@@ -996,6 +1099,8 @@ function init() {
   renderPreview();
 
   document.addEventListener('click', e => {
+    const langBtn = e.target.closest('[data-lang]');
+    if (langBtn) { setLanguage(langBtn.dataset.lang); return; }
     if (e.target.closest('[data-close]')) closeModal();
   });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });

@@ -25,7 +25,7 @@ const HEAD_PATHS = {
 
 const BUILD_WIDTH = { slender: 104, athletic: 118, broad: 134, colossal: 148 };
 
-function eyeLocal(shape, cx, cy, eyeColor, glow, uid) {
+function eyeLocal(shape, cx, cy, eyeColor, glow, uid, browColor = '#2b2130') {
   const id = `${uid}-eye-${cx}`;
   let sclera;
   if (shape === 'round') sclera = `<circle cx="0" cy="0" r="10.5" fill="#f8f4ec" stroke="#2c2333" stroke-opacity=".45" stroke-width="1"/>`;
@@ -45,7 +45,7 @@ function eyeLocal(shape, cx, cy, eyeColor, glow, uid) {
     <circle cx="0" cy="0.5" r="2.7" fill="#15111e"/>
     <circle cx="-2" cy="-1.8" r="1.5" fill="#ffffff" opacity=".9"/>
     <path d="${lash}" fill="none" stroke="#241b2b" stroke-width="2.4" stroke-linecap="round"/>
-    <path d="${brow}" fill="none" stroke="#2b2130" stroke-width="4.2" stroke-linecap="round" opacity=".85"/>
+    <path d="${brow}" fill="none" stroke="${browColor}" stroke-width="4.2" stroke-linecap="round" opacity=".85"/>
   </g>`;
 }
 
@@ -64,7 +64,11 @@ export function renderPortrait(god, opts = {}) {
   const race = raceOf(god.race || a.race || 'humans');
   const accent = domain.color;
   const skin = a.skin || '#e8b894';
-  const hair = a.hairColor || '#1c1a26';
+  const age = Math.max(0, Number(opts.age ?? god.age ?? a.age ?? 0));
+  const grey = Math.min(0.88, Math.max(0, (age - 30) / 78));
+  const baseHair = a.hairColor || '#1c1a26';
+  const hair = age > 30 ? mix(baseHair, '#d9d5ce', grey) : baseHair;
+  const browColor = age > 35 ? mix('#2b2130', '#d9d5ce', grey * 0.82) : '#2b2130';
   const eye = a.eyeColor || '#58c7ff';
   const build = a.build || 'athletic';
   const face = a.face || 'oval';
@@ -107,6 +111,34 @@ export function renderPortrait(god, opts = {}) {
       <circle cx="272" cy="146" r="34"/><circle cx="282" cy="194" r="30"/><circle cx="268" cy="238" r="26"/>
       <circle cx="156" cy="96" r="32"/><circle cx="200" cy="76" r="38"/><circle cx="244" cy="96" r="32"/>
     </g>`;
+  } else if (hairStyle === 'ponytail') {
+    backHair = `<path d="M200 64 C146 64 112 106 112 170 C112 196 108 218 102 238 L298 238 C292 218 288 196 288 170 C288 106 254 64 200 64 Z" fill="url(#${uid}-hair)"/>
+      <path d="M254 92 C300 102 322 136 322 180 C322 226 306 280 282 328 C274 342 264 348 258 338 C270 300 280 260 284 222 C288 180 278 138 246 112 Z" fill="url(#${uid}-hair)"/>
+      <ellipse cx="257" cy="102" rx="13" ry="7" transform="rotate(24 257 102)" fill="#d9b36b" opacity=".95"/>`;
+  } else if (hairStyle === 'curls') {
+    backHair = `<g fill="url(#${uid}-hair)">
+      <circle cx="124" cy="142" r="34"/><circle cx="111" cy="188" r="32"/><circle cx="116" cy="234" r="30"/><circle cx="130" cy="274" r="25"/>
+      <circle cx="276" cy="142" r="34"/><circle cx="289" cy="188" r="32"/><circle cx="284" cy="234" r="30"/><circle cx="270" cy="274" r="25"/>
+      <circle cx="154" cy="100" r="30"/><circle cx="200" cy="78" r="35"/><circle cx="246" cy="100" r="30"/>
+      <circle cx="148" cy="312" r="20"/><circle cx="252" cy="312" r="20"/>
+    </g>`;
+  } else if (hairStyle === 'locs') {
+    backHair = `<g fill="url(#${uid}-hair)">
+      <path d="M118 154 C108 214 112 286 124 350 C130 384 138 410 146 426 C152 396 150 360 144 322 C138 282 134 222 136 168 Z"/>
+      <path d="M282 154 C292 214 288 286 276 350 C270 384 262 410 254 426 C248 396 250 360 256 322 C262 282 266 222 264 168 Z"/>
+      <path d="M148 138 C138 194 142 254 154 306 C160 334 168 356 176 370 C180 342 176 308 170 274 C164 234 160 186 166 144 Z" opacity=".9"/>
+      <path d="M252 138 C262 194 258 254 246 306 C240 334 232 356 224 370 C220 342 224 308 230 274 C236 234 240 186 234 144 Z" opacity=".9"/>
+    </g>
+    <g stroke="#d9b36b" stroke-width="3" fill="none" opacity=".8">
+      <path d="M116 248 q12 5 23 1"/><path d="M284 248 q-12 5 -23 1"/>
+      <path d="M145 262 q12 4 22 0"/><path d="M255 262 q-12 4 -22 0"/>
+    </g>`;
+  } else if (hairStyle === 'bun') {
+    backHair = `<circle cx="200" cy="58" r="30" fill="url(#${uid}-hair)"/>
+      <path d="M200 34 C218 34 230 48 230 62 C230 76 216 88 200 88 C184 88 170 76 170 62 C170 48 182 34 200 34 Z" fill="none" stroke="${hairDark}" stroke-width="2" opacity=".45"/>
+      <path d="M160 232 C164 272 178 296 200 306 C222 296 236 272 240 232 Z" fill="${hairDark}" opacity=".85"/>`;
+  } else if (hairStyle === 'undercut') {
+    backHair = `<path d="M162 232 C168 272 180 296 200 304 C220 296 232 272 238 232 Z" fill="${hairDark}" opacity=".7"/>`;
   } else if (hairStyle === 'short' || hairStyle === 'mohawk') {
     backHair = `<path d="M166 236 C170 274 182 296 200 304 C218 296 230 274 234 236 Z" fill="${hairDark}" opacity=".9"/>`;
   }
@@ -153,6 +185,45 @@ export function renderPortrait(god, opts = {}) {
     frontHair = `<path d="M184 122 C174 92 178 62 192 40 C198 58 202 64 204 46 C212 64 218 60 224 42 C238 66 240 96 230 122 C218 116 196 116 184 122 Z" fill="url(#${uid}-hair)"/>
       <path d="M120 178 C114 162 114 144 124 128 C138 114 156 108 170 112 C150 124 138 146 132 178 Z" fill="${darken(skin, .1)}" opacity=".22"/>
       <path d="M280 178 C286 162 286 144 276 128 C262 114 244 108 230 112 C250 124 262 146 268 178 Z" fill="${darken(skin, .1)}" opacity=".22"/>`;
+  } else if (hairStyle === 'ponytail') {
+    frontHair = `${cap}
+      <path d="M200 100 C180 102 162 114 150 136 C166 126 182 122 196 126 C199 116 200 108 200 100 Z" fill="url(#${uid}-hair)"/>
+      <path d="M140 118 C154 112 174 112 190 120 C198 124 202 130 204 136 C186 128 166 126 148 134 C144 128 140 123 140 118 Z" fill="${lighten(hair, 0.05)}"/>
+      <path d="M246 112 C258 118 266 130 268 144 C274 142 280 144 284 150 C274 160 258 164 246 156 C240 146 240 126 246 112 Z" fill="url(#${uid}-hair)"/>`;
+  } else if (hairStyle === 'curls') {
+    frontHair = `${cap}
+      <g fill="url(#${uid}-hair)">
+        <circle cx="142" cy="136" r="20"/><circle cx="162" cy="114" r="22"/><circle cx="184" cy="102" r="21"/>
+        <circle cx="208" cy="100" r="22"/><circle cx="232" cy="110" r="22"/><circle cx="254" cy="132" r="20"/>
+        <circle cx="126" cy="172" r="17"/><circle cx="274" cy="172" r="17"/>
+      </g>
+      <g fill="none" stroke="${hairDark}" stroke-width="1.6" opacity=".45" stroke-linecap="round">
+        <path d="M136 132 q12 -8 22 -2"/><path d="M166 108 q10 -8 20 -2"/><path d="M206 96 q10 -6 18 2"/><path d="M238 110 q10 -4 16 4"/>
+      </g>`;
+  } else if (hairStyle === 'locs') {
+    frontHair = `${cap}
+      <g stroke="url(#${uid}-hair)" stroke-width="17" stroke-linecap="round" fill="none">
+        <path d="M146 132 C132 160 128 200 132 238"/>
+        <path d="M164 116 C150 148 146 190 150 226"/>
+        <path d="M254 132 C268 160 272 200 268 238"/>
+        <path d="M236 116 C250 148 254 190 250 226"/>
+      </g>
+      <g fill="url(#${uid}-hair)">
+        <circle cx="150" cy="110" r="16"/><circle cx="172" cy="102" r="16"/><circle cx="228" cy="102" r="16"/><circle cx="250" cy="110" r="16"/>
+      </g>`;
+  } else if (hairStyle === 'bun') {
+    frontHair = `${cap}
+      <ellipse cx="200" cy="48" rx="27" ry="16" fill="url(#${uid}-hair)"/>
+      <path d="M176 46 C186 38 214 38 224 46" fill="none" stroke="${hairDark}" stroke-width="2" opacity=".5"/>
+      <path d="M150 132 C144 162 143 190 146 214" stroke="${lighten(hair, 0.1)}" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <path d="M250 132 C256 162 257 190 254 214" stroke="${lighten(hair, 0.1)}" stroke-width="6" fill="none" stroke-linecap="round"/>`;
+  } else if (hairStyle === 'undercut') {
+    frontHair = `<path d="M150 152 C146 116 166 78 202 78 C240 78 264 102 266 136 C242 120 216 112 188 120 C170 126 158 138 150 152 Z" fill="url(#${uid}-hair)"/>
+      <path d="M154 160 C148 190 150 214 158 232" stroke="${hairDark}" stroke-width="4" fill="none" stroke-linecap="round" opacity=".8"/>
+      <path d="M246 160 C252 190 250 214 242 232" stroke="${hairDark}" stroke-width="4" fill="none" stroke-linecap="round" opacity=".8"/>
+      <path d="M132 172 C126 156 126 140 136 126 C148 112 164 106 178 110 C158 124 144 146 138 176 Z" fill="${darken(skin, .1)}" opacity=".2"/>
+      <path d="M268 172 C274 156 274 140 264 126 C252 112 236 106 222 110 C242 124 256 146 262 176 Z" fill="${darken(skin, .1)}" opacity=".2"/>
+      <path d="M176 108 C190 100 214 98 232 106" fill="none" stroke="${lighten(hair,.16)}" stroke-width="2" opacity=".45"/>`;
   } else if (hairStyle === 'bald') {
     frontHair = `<ellipse cx="186" cy="116" rx="30" ry="14" fill="#ffffff" opacity=".1"/>`;
   }
@@ -264,9 +335,27 @@ export function renderPortrait(god, opts = {}) {
     </g>`;
   }
 
-  const eyes = eyeLocal(eyeShape, 174, 178, eye, glow, uid) + eyeLocal(eyeShape, 226, 178, eye, glow, uid);
+  const eyes = eyeLocal(eyeShape, 174, 178, eye, glow, uid, browColor) + eyeLocal(eyeShape, 226, 178, eye, glow, uid, browColor);
 
-  return `<svg class="portrait-svg" viewBox="0 0 400 520" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Portrait of ${(god.name || 'a god').replace(/"/g, '')}">
+  const ageStrength = Math.min(0.62, Math.max(0, (age - 38) / 90));
+  const ageLines = ageStrength > 0 ? `<g fill="none" stroke="${darken(skin, .45)}" stroke-linecap="round" opacity="${ageStrength}">
+    <path d="M166 146 Q200 138 234 146" stroke-width="1.4"/>
+    <path d="M172 156 Q200 149 228 156" stroke-width="1.1"/>
+    <path d="M160 184 Q166 188 172 184 M240 184 Q234 188 228 184" stroke-width="1.1"/>
+    <path d="M164 192 Q174 196 184 191 M236 192 Q226 196 216 191" stroke-width="1.2"/>
+    <path d="M180 208 Q176 219 183 226 M220 208 Q224 219 217 226" stroke-width="1.3"/>
+    <path d="M188 232 Q183 234 182 238 M212 232 Q217 234 218 238" stroke-width="1.2"/>
+    <path d="M158 178 L150 174 M158 182 L150 186 M242 178 L250 174 M242 182 L250 186" stroke-width="1"/>
+    <path d="M168 242 Q176 250 186 246 M232 242 Q224 250 214 246" stroke-width="1"/>
+  </g>` : '';
+  const ageSpots = age > 62 ? `<g fill="${darken(skin, .32)}" opacity="${Math.min(0.3, (age - 60) / 130)}">
+    <ellipse cx="154" cy="210" rx="2.4" ry="1.7"/><ellipse cx="166" cy="218" rx="1.8" ry="1.3"/>
+    <ellipse cx="239" cy="212" rx="2.2" ry="1.6"/><ellipse cx="229" cy="220" rx="1.6" ry="1.2"/>
+    <ellipse cx="196" cy="150" rx="1.8" ry="1.2"/>
+  </g>` : '';
+  const viewBox = opts.crop === 'face' ? '88 16 224 224' : '0 0 400 520';
+
+  return `<svg class="portrait-svg" viewBox="${viewBox}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Portrait of ${(god.name || 'a god').replace(/"/g, '')}, age ${age}">
   <defs>
     <radialGradient id="${uid}-aura" cx="50%" cy="38%" r="52%">
       <stop offset="0" stop-color="${accent}" stop-opacity=".34"/>
@@ -337,6 +426,8 @@ export function renderPortrait(god, opts = {}) {
     <path d="M187 227 Q194 222 200 226 Q206 222 213 227" fill="none" stroke="${darken(skin, .45)}" stroke-opacity=".5" stroke-width="1.1"/>
     <path d="M194 233 Q200 236 206 233" fill="none" stroke="#ffffff" stroke-opacity=".22" stroke-width="1.4"/>
 
+    ${ageLines}
+    ${ageSpots}
     ${mark}
     ${frontHair}
     ${hairStyle === 'flowing' ? `<path d="M200 72 C202 90 202 102 200 112" fill="none" stroke="${hairDark}" stroke-width="1.4" opacity=".55"/>

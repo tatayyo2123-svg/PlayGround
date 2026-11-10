@@ -16,18 +16,22 @@
   <div id="app">
     <!-- ══════════ TITLE ══════════ -->
     <section class="screen active" id="screen-title">
+      <div class="lang-switch" role="group" data-i18n-title="Switch language">
+        <button type="button" data-lang="en">EN</button>
+        <button type="button" data-lang="es">ES</button>
+      </div>
       <div class="title-grid">
         <div class="title-copy">
-          <div class="eyebrow"><span class="rule"></span>A life simulator of the divine<span class="rule"></span></div>
+          <div class="eyebrow"><span class="rule"></span><span data-i18n="A life simulator of the divine">A life simulator of the divine</span><span class="rule"></span></div>
           <h1 class="logo"><span class="logo-mark">✦</span><span class="logo-text">GODSPIRE</span></h1>
-          <p class="tagline">Every mortal is a prayer. Every prayer is a step.<br /><em>Climb until the stars kneel.</em></p>
+          <p class="tagline" data-i18n-html="Every mortal is a prayer. Every prayer is a step.<br /><em>Climb until the stars kneel.</em>">Every mortal is a prayer. Every prayer is a step.<br /><em>Climb until the stars kneel.</em></p>
           <div class="title-actions">
-            <button class="btn primary xl" id="beginBtn">Begin Your Myth <span class="btn-arrow">→</span></button>
-            <button class="btn ghost xl" id="continueBtn" hidden>Continue Chronicle</button>
-            <button class="btn ghost xl" id="guideBtn">How to Play</button>
+            <button class="btn primary xl" id="beginBtn"><span data-i18n="Begin Your Myth">Begin Your Myth</span> <span class="btn-arrow">→</span></button>
+            <button class="btn ghost xl" id="continueBtn" hidden data-i18n="Continue Chronicle">Continue Chronicle</button>
+            <button class="btn ghost xl" id="guideBtn" data-i18n="How to Play">How to Play</button>
           </div>
           <div class="title-meta">
-            <span><strong>12</strong> domains</span><i></i><span><strong>8</strong> mortal races</span><i></i><span><strong>9</strong> divine ranks</span><i></i><span><strong>20</strong> thrones</span>
+            <span><strong>12</strong> <span data-i18n="domains">domains</span></span><i></i><span><strong>8</strong> <span data-i18n="mortal races">mortal races</span></span><i></i><span><strong>9</strong> <span data-i18n="divine ranks">divine ranks</span></span><i></i><span><strong>20</strong> <span data-i18n="thrones">thrones</span></span>
           </div>
         </div>
         <div class="title-hero">
@@ -41,18 +45,24 @@
         </div>
       </div>
       <footer class="title-footer">
-        <span>Shape a face. Found a people. Take a throne.</span>
+        <span data-i18n="Shape a face. Found a people. Take a throne.">Shape a face. Found a people. Take a throne.</span>
         <span class="sep">✦</span>
-        <span>Progress saves in your browser</span>
+        <span data-i18n="Progress saves in your browser">Progress saves in your browser</span>
       </footer>
     </section>
 
     <!-- ══════════ CREATOR ══════════ -->
     <section class="screen" id="screen-create">
       <header class="topbar">
-        <button class="back-link" id="backToTitle">← Return to the Void</button>
+        <button class="back-link" id="backToTitle">← <span data-i18n="Return to the Void">Return to the Void</span></button>
         <div class="brand-small"><span>✦</span> GODSPIRE</div>
-        <div class="step-label">I. Shape Your Divinity</div>
+        <div class="topbar-right">
+          <div class="lang-switch compact" role="group" data-i18n-title="Switch language">
+            <button type="button" data-lang="en">EN</button>
+            <button type="button" data-lang="es">ES</button>
+          </div>
+          <div class="step-label" data-i18n="I. Shape Your Divinity">I. Shape Your Divinity</div>
+        </div>
       </header>
 
       <div class="creator-grid">
@@ -69,48 +79,48 @@
             <div class="preview-chips" id="previewChips"></div>
           </div>
           <div class="preview-actions">
-            <button class="btn ghost small" id="randomizeBtn">⟳ &nbsp;Randomize visage</button>
-            <span class="preview-hint">Every detail is carved by you.</span>
+            <button class="btn ghost small" id="randomizeBtn">⟳ &nbsp;<span data-i18n="Randomize visage">Randomize visage</span></button>
+            <span class="preview-hint" data-i18n="Every detail is carved by you.">Every detail is carved by you.</span>
           </div>
         </section>
 
         <section class="editor-card panel">
           <div class="editor-head">
             <div>
-              <div class="kicker">The divine workshop</div>
-              <h1>Create Your God</h1>
+              <div class="kicker" data-i18n="The divine workshop">The divine workshop</div>
+              <h1 data-i18n="Create Your God">Create Your God</h1>
             </div>
-            <p>Choose a domain, a lineage, and the face the world will carve into its temples.</p>
+            <p data-i18n="Choose a domain, a lineage, and the face the world will carve into its temples.">Choose a domain, a lineage, and the face the world will carve into its temples.</p>
           </div>
 
           <div class="identity-row">
             <label class="field">
-              <span>Divine Name</span>
+              <span data-i18n="Divine Name">Divine Name</span>
               <input id="godName" maxlength="20" autocomplete="off" spellcheck="false" value="Aurelion" />
             </label>
             <label class="field">
-              <span>Epithet</span>
+              <span data-i18n="Epithet">Epithet</span>
               <input id="godEpithet" maxlength="28" autocomplete="off" spellcheck="false" value="The Stormlord" />
             </label>
             <label class="field">
-              <span>Pantheon</span>
+              <span data-i18n="Pantheon">Pantheon</span>
               <input id="godPantheon" maxlength="22" autocomplete="off" spellcheck="false" value="The New Order" />
             </label>
           </div>
 
           <div class="tabs" role="tablist" id="creatorTabs">
-            <button class="tab active" role="tab" data-tab="face">Face</button>
-            <button class="tab" role="tab" data-tab="body">Body</button>
-            <button class="tab" role="tab" data-tab="eyes">Eyes</button>
-            <button class="tab" role="tab" data-tab="hair">Hair</button>
-            <button class="tab" role="tab" data-tab="divine">Divine</button>
+            <button class="tab active" role="tab" data-tab="face" data-i18n="Face">Face</button>
+            <button class="tab" role="tab" data-tab="body" data-i18n="Body">Body</button>
+            <button class="tab" role="tab" data-tab="eyes" data-i18n="Eyes">Eyes</button>
+            <button class="tab" role="tab" data-tab="hair" data-i18n="Hair">Hair</button>
+            <button class="tab" role="tab" data-tab="divine" data-i18n="Divine">Divine</button>
           </div>
 
           <div class="tab-panels" id="creatorPanels"></div>
 
           <footer class="creator-footer">
             <div class="build-summary" id="buildSummary"></div>
-            <button class="btn primary" id="beginGameBtn">Enter the Mortal Realm <span class="btn-arrow">→</span></button>
+            <button class="btn primary" id="beginGameBtn"><span data-i18n="Enter the Mortal Realm">Enter the Mortal Realm</span> <span class="btn-arrow">→</span></button>
           </footer>
         </section>
       </div>
@@ -120,21 +130,24 @@
     <section class="screen" id="screen-game" data-mtab="realm">
       <header class="hud">
         <div class="hud-id">
-          <div class="rank-crest" id="hudCrest"></div>
+          <div class="hud-avatar" id="hudAvatar">
+            <div class="hud-avatar-inner" id="hudAvatarInner"></div>
+            <span class="hud-avatar-badge" id="hudAvatarBadge"></span>
+          </div>
           <div class="hud-id-text">
             <div class="hud-name"><span id="hudName">Aurelion</span><span class="hud-rank" id="hudRank">Demigod</span></div>
             <div class="hud-epithet" id="hudEpithet">The Stormlord · The New Order</div>
           </div>
         </div>
         <div class="hud-might">
-          <span class="label">Divine Might</span>
+          <span class="label" data-i18n="Divine Might">Divine Might</span>
           <strong id="hudMight">1,237</strong>
           <span class="hud-standing" id="hudStanding">#25</span>
         </div>
         <div class="hud-right">
           <div class="hud-aeon"><span id="hudAeon">Aeon I</span><small id="hudDomain">Storm</small></div>
-          <button class="icon-btn" id="soundBtn" title="Toggle sound" aria-label="Toggle sound"></button>
-          <button class="icon-btn" id="menuBtn" title="Menu" aria-label="Menu"></button>
+          <button class="icon-btn" id="soundBtn" title="Toggle sound" aria-label="Toggle sound" data-i18n-title="Toggle sound"></button>
+          <button class="icon-btn" id="menuBtn" title="Menu" aria-label="Menu" data-i18n-title="Menu"></button>
         </div>
       </header>
 
@@ -144,24 +157,25 @@
           <div class="god-title">
             <div class="god-name" id="cardName">Aurelion</div>
             <div class="god-sub" id="cardSub">Demigod · Storm</div>
+            <div class="mood-line" id="moodLine"></div>
           </div>
           <div class="might-block">
-            <div class="might-line"><span>Divine Might</span><strong id="cardMight">1,237</strong></div>
+            <div class="might-line"><span data-i18n="Divine Might">Divine Might</span><strong id="cardMight">1,237</strong></div>
             <div class="might-bar"><i id="mightBar"></i></div>
             <div class="might-next" id="mightNext"></div>
           </div>
           <div class="followers-block">
-            <span class="label">Souls in your care</span>
+            <span class="label" data-i18n="Souls in your care">Souls in your care</span>
             <div><strong id="cardFollowers">420</strong><span class="trend" id="followersTrend"></span></div>
           </div>
           <div class="stat-grid" id="statGrid"></div>
           <button class="btn ascend" id="ascendBtn"></button>
           <div class="card-section">
-            <div class="section-head"><span>Worshipping Races</span><button class="mini-link" id="openRaceBtn">Forge a race</button></div>
+            <div class="section-head"><span data-i18n="Worshipping Races">Worshipping Races</span><button class="mini-link" id="openRaceBtn" data-i18n="Forge a race">Forge a race</button></div>
             <div class="race-chips" id="raceChips"></div>
           </div>
           <div class="card-section">
-            <div class="section-head"><span>Relics</span><span class="section-count" id="relicCount"></span></div>
+            <div class="section-head"><span data-i18n="Relics">Relics</span><span class="section-count" id="relicCount"></span></div>
             <div class="relic-list" id="relicList"></div>
           </div>
         </aside>
@@ -173,18 +187,18 @@
               <span class="aeon-sub" id="aeonSub">The First Dawn</span>
             </div>
             <div class="ap-wrap">
-              <span>Divine actions</span>
+              <span data-i18n="Divine actions">Divine actions</span>
               <div class="ap-pips" id="apPips"></div>
             </div>
           </div>
           <div class="actions-grid" id="actionsGrid"></div>
           <div class="chronicle panel">
-            <header><span>Chronicle</span><small id="chronicleMeta">Newest first</small></header>
+            <header><span data-i18n="Chronicle">Chronicle</span><small id="chronicleMeta" data-i18n="Newest first">Newest first</small></header>
             <div class="log" id="logList"></div>
           </div>
           <button class="end-turn" id="endTurnBtn">
-            <span>End Aeon</span>
-            <small>Let the world turn</small>
+            <span data-i18n="End Aeon">End Aeon</span>
+            <small data-i18n="Let the world turn">Let the world turn</small>
             <span class="end-arrow">→</span>
           </button>
         </section>
@@ -192,8 +206,8 @@
         <aside class="col col-board panel ornate" id="colBoard">
           <header class="board-head">
             <div>
-              <div class="board-kicker">The divine order</div>
-              <h2>The Twenty Thrones</h2>
+              <div class="board-kicker" data-i18n="The divine order">The divine order</div>
+              <h2 data-i18n="The Twenty Thrones">The Twenty Thrones</h2>
             </div>
             <div class="board-crown" id="boardCrown"></div>
           </header>
@@ -203,9 +217,9 @@
       </main>
 
       <nav class="mobile-tabs" aria-label="Game sections">
-        <button class="active" data-mtab="realm"><span>✦</span>Realm</button>
-        <button data-mtab="god"><span>◈</span>Self</button>
-        <button data-mtab="board"><span>♛</span>Thrones</button>
+        <button class="active" data-mtab="realm"><span>✦</span><span data-i18n="Realm">Realm</span></button>
+        <button data-mtab="god"><span>◈</span><span data-i18n="Self">Self</span></button>
+        <button data-mtab="board"><span>♛</span><span data-i18n="Thrones">Thrones</span></button>
       </nav>
     </section>
   </div>

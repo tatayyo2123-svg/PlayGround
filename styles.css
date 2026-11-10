@@ -266,6 +266,23 @@ svg { display: block; }
 .brand-small { font-family: var(--serif); font-size: 15px; letter-spacing: 0.32em; color: var(--gold); }
 .brand-small span { margin-right: 8px; opacity: 0.8; }
 .step-label { font-size: 9.5px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--muted-2); }
+.topbar-right { display: flex; align-items: center; gap: 14px; }
+.lang-switch {
+  position: fixed; top: 22px; right: 26px; z-index: 45;
+  display: flex; align-items: center; gap: 2px;
+  padding: 3px; border: 1px solid var(--line); border-radius: 999px;
+  background: rgba(9, 8, 17, 0.78); backdrop-filter: blur(12px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+.lang-switch button {
+  border: 0; background: transparent; color: var(--muted-2);
+  font-size: 8.5px; font-weight: 600; letter-spacing: 0.16em;
+  padding: 5px 8px; border-radius: 999px; cursor: pointer; transition: color .2s, background .2s;
+}
+.lang-switch button:hover { color: var(--gold); }
+.lang-switch button.active { color: #171019; background: linear-gradient(135deg, #f1d9a4, #cfa75f); }
+.lang-switch.compact { position: static; background: rgba(10, 9, 18, 0.5); box-shadow: none; padding: 2px; }
+.lang-switch.compact button { padding: 4px 7px; }
 
 .creator-grid {
   flex: 1; min-height: 0;
@@ -420,15 +437,34 @@ svg { display: block; }
   backdrop-filter: blur(12px);
 }
 .hud-id { display: flex; align-items: center; gap: 13px; min-width: 0; }
-.rank-crest {
-  width: 42px; height: 42px; flex: none;
-  display: grid; place-items: center;
-  border: 1px solid var(--line-strong);
-  transform: rotate(45deg); border-radius: 9px;
-  background: radial-gradient(circle, var(--accent-soft), transparent 70%);
-  color: var(--accent);
+.hud-avatar {
+  position: relative; width: 48px; height: 48px; flex: none; padding: 3px;
+  border-radius: 50%;
+  background: conic-gradient(from 220deg, var(--mood, #9fd9c4) 0 42%, rgba(255, 255, 255, 0.12) 42% 58%, var(--mood, #9fd9c4) 58% 100%);
+  box-shadow: 0 0 0 1px rgba(232, 201, 135, 0.18), 0 0 18px color-mix(in srgb, var(--mood, #9fd9c4) 25%, transparent);
 }
-.rank-crest svg { transform: rotate(-45deg); width: 20px; height: 20px; }
+.hud-avatar-inner {
+  width: 100%; height: 100%; border-radius: 50%; overflow: hidden;
+  background: radial-gradient(circle at 50% 35%, var(--accent-soft), #0a0912 72%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.hud-avatar-inner .portrait-svg { width: 100%; height: 100%; display: block; }
+.hud-avatar-badge {
+  position: absolute; right: -3px; bottom: -3px;
+  width: 19px; height: 19px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: #0a0912; border: 1px solid var(--line-strong); color: var(--accent);
+}
+.hud-avatar-badge .icon { width: 11px; height: 11px; }
+.hud-avatar[data-mood="serene"], .mood-line[data-mood="serene"] { --mood: #9fd9c4; }
+.hud-avatar[data-mood="radiant"], .mood-line[data-mood="radiant"] { --mood: #ffd77a; }
+.hud-avatar[data-mood="triumphant"], .mood-line[data-mood="triumphant"] { --mood: #e8c987; }
+.hud-avatar[data-mood="wrathful"], .mood-line[data-mood="wrathful"] { --mood: #ff8a5c; }
+.hud-avatar[data-mood="weary"], .mood-line[data-mood="weary"] { --mood: #a58cff; }
+.hud-avatar[data-mood="restless"], .mood-line[data-mood="restless"] { --mood: #7fb8ff; }
+.hud-avatar[data-mood="ancient"], .mood-line[data-mood="ancient"] { --mood: #d9b36b; }
+.mood-line { display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 9px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--muted-2); }
+.mood-line .mood-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--mood); box-shadow: 0 0 8px var(--mood); flex: none; }
 .hud-name { display: flex; align-items: baseline; gap: 10px; }
 .hud-name > span:first-child { font-family: var(--serif); font-size: 20px; letter-spacing: 0.05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hud-rank { font-size: 8.5px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); border: 1px solid var(--line); padding: 2px 7px; border-radius: 999px; white-space: nowrap; }
@@ -836,14 +872,19 @@ svg { display: block; }
   .creator-footer { flex-direction: column; align-items: stretch; margin: 0 -16px -14px; padding: 12px 16px calc(14px + env(safe-area-inset-bottom)); gap: 10px; }
   .build-summary { max-width: none; }
   .hud { padding: 8px 12px; }
-  .hud-id { flex: 1; min-width: 0; }
+  .hud-id { flex: 1; min-width: 0; gap: 9px; }
   .hud-name > span:first-child { font-size: 17px; }
   .hud-might { order: 3; width: 100%; margin: 0; justify-content: space-between; padding-top: 4px; border-top: 1px solid rgba(255,255,255,.05); }
   .hud-might .label { display: block; }
   .hud-right { order: 2; }
   .hud-epithet { font-size: 8px; }
-  .rank-crest { width: 34px; height: 34px; }
-  .rank-crest svg { width: 16px; height: 16px; }
+  .hud-avatar { width: 38px; height: 38px; padding: 2px; }
+  .hud-avatar-badge { width: 16px; height: 16px; right: -2px; bottom: -2px; }
+  .hud-avatar-badge .icon { width: 9px; height: 9px; }
+  .mood-line { font-size: 8px; }
+  .lang-switch { top: 12px; right: 12px; }
+  .topbar-right { gap: 8px; }
+  .lang-switch.compact button { padding: 4px 6px; font-size: 8px; }
   .game-main { padding: 10px 10px 90px; gap: 10px; }
   .actions-grid { grid-template-columns: 1fr; }
   .action { min-height: 62px; }

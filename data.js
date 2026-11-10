@@ -14,6 +14,18 @@ export const RANKS = [
 
 export const RANK_THRESHOLDS = RANKS.map(r => r.need);
 
+export const AGE_START = 18;
+export const AGE_PER_AEON = 3;
+export const AGE_MILESTONES = {
+  45: { en: 'The years settle on your shoulders. Mortals begin to call you ancient.', es: 'Los años se posan en tus hombros. Los mortales empiezan a llamarte antiguo.' },
+  60: { en: 'Your hair greys and your gaze deepens. Sixty years of prayers have carved you.', es: 'Tu cabello encanece y tu mirada se vuelve más profunda. Sesenta años de plegarias te han tallado.' },
+  75: { en: 'Seventy-five years. Temples depict you with lines on your face, and it feels right.', es: 'Setenta y cinco años. Los templos te representan con arrugas, y te parece justo.' },
+  90: { en: 'Ninety years. You are older than many gods, and far more patient.', es: 'Noventa años. Eres más viejo que muchos dioses y mucho más paciente.' },
+};
+
+let numberLocale = 'en-US';
+export function setNumberLocale(next) { numberLocale = next === 'es' ? 'es-ES' : 'en-US'; }
+
 export const DOMAINS = [
   { id: 'storm', name: 'Storm', color: '#7fb8ff', mods: { miracleBonus: 0.25 }, passive: 'Miracles convert 25% more souls.' },
   { id: 'death', name: 'Death', color: '#a58cff', mods: { smiteBonus: 3 }, passive: 'Smiting grants +3 extra power.' },
@@ -86,14 +98,14 @@ export const TRAITS = [
 ];
 
 export const STARTER_RACES = [
-  { id: 'humans', name: 'Humans', trait: 'industrious', glyph: 'users', color: '#e7c27a', ears: 'round', form: 'Humanoid', desc: 'Short-lived, hungry, and endlessly inventive.' },
-  { id: 'elves', name: 'High Elves', trait: 'arcane', glyph: 'leaf', color: '#9fd9c4', ears: 'pointed', form: 'Elven', desc: 'Long of memory, longer of grudge, beautiful in grief.' },
-  { id: 'dwarves', name: 'Stone Dwarves', trait: 'stoic', glyph: 'mountain', color: '#d9a06b', ears: 'round', form: 'Dwarven', desc: 'They carve your face into mountains and call it modest.' },
-  { id: 'beastkin', name: 'Beastkin', trait: 'feral', glyph: 'paw', color: '#e39a6f', ears: 'pointed', form: 'Beastfolk', desc: 'Claws, tusks, bright eyes. They worship with their whole bodies.' },
-  { id: 'tideborn', name: 'Tideborn', trait: 'tidal', glyph: 'waves', color: '#74d4d0', ears: 'finned', form: 'Aquatic', desc: 'They build shrines of coral and sing in drowned chords.' },
-  { id: 'emberkin', name: 'Emberkin', trait: 'zealous', glyph: 'flame', color: '#ff9c66', ears: 'pointed', form: 'Emberborn', desc: 'Born in ash, devoted in fire, brief and blinding.' },
-  { id: 'starfolk', name: 'Starfolk', trait: 'cosmic', glyph: 'star4', color: '#cdb8ff', ears: 'pointed', form: 'Starborn', desc: 'They read your will in comets and argue about the commas.' },
-  { id: 'draconians', name: 'Draconians', trait: 'apex', glyph: 'bolt', color: '#ff7a7a', ears: 'horned', form: 'Draconic', desc: 'Scaled empires that remember every oath you ever broke.' },
+  { id: 'humans', name: 'Humans', trait: 'industrious', glyph: 'users', color: '#e7c27a', ears: 'round', form: 'Humanoid', desc: 'Short-lived, hungry, and endlessly inventive.', descEs: 'De vida breve, hambrientos e infinitamente inventivos.' },
+  { id: 'elves', name: 'High Elves', trait: 'arcane', glyph: 'leaf', color: '#9fd9c4', ears: 'pointed', form: 'Elven', desc: 'Long of memory, longer of grudge, beautiful in grief.', descEs: 'De larga memoria, rencor más largo, hermosos en el duelo.' },
+  { id: 'dwarves', name: 'Stone Dwarves', trait: 'stoic', glyph: 'mountain', color: '#d9a06b', ears: 'round', form: 'Dwarven', desc: 'They carve your face into mountains and call it modest.', descEs: 'Tallan tu rostro en las montañas y lo llaman modesto.' },
+  { id: 'beastkin', name: 'Beastkin', trait: 'feral', glyph: 'paw', color: '#e39a6f', ears: 'pointed', form: 'Beastfolk', desc: 'Claws, tusks, bright eyes. They worship with their whole bodies.', descEs: 'Garras, colmillos, ojos brillantes. Adoran con todo el cuerpo.' },
+  { id: 'tideborn', name: 'Tideborn', trait: 'tidal', glyph: 'waves', color: '#74d4d0', ears: 'finned', form: 'Aquatic', desc: 'They build shrines of coral and sing in drowned chords.', descEs: 'Construyen santuarios de coral y cantan en acordes ahogados.' },
+  { id: 'emberkin', name: 'Emberkin', trait: 'zealous', glyph: 'flame', color: '#ff9c66', ears: 'pointed', form: 'Emberborn', desc: 'Born in ash, devoted in fire, brief and blinding.', descEs: 'Nacidos de la ceniza, devotos del fuego, breves y cegadores.' },
+  { id: 'starfolk', name: 'Starfolk', trait: 'cosmic', glyph: 'star4', color: '#cdb8ff', ears: 'pointed', form: 'Starborn', desc: 'They read your will in comets and argue about the commas.', descEs: 'Leen tu voluntad en los cometas y discuten sobre las comas.' },
+  { id: 'draconians', name: 'Draconians', trait: 'apex', glyph: 'bolt', color: '#ff7a7a', ears: 'horned', form: 'Draconic', desc: 'Scaled empires that remember every oath you ever broke.', descEs: 'Imperios escamosos que recuerdan cada juramento que rompiste.' },
 ];
 
 export const APPEARANCE_OPTIONS = {
@@ -123,6 +135,11 @@ export const APPEARANCE_OPTIONS = {
     { id: 'topknot', name: 'Topknot' },
     { id: 'wild', name: 'Wild' },
     { id: 'mohawk', name: 'Mohawk' },
+    { id: 'ponytail', name: 'Ponytail' },
+    { id: 'curls', name: 'Curls' },
+    { id: 'locs', name: 'Locs' },
+    { id: 'bun', name: 'Bun' },
+    { id: 'undercut', name: 'Undercut' },
     { id: 'bald', name: 'Bald' },
   ],
   markings: [
@@ -227,6 +244,8 @@ export const ACTIONS = [
 
 const RELIC_PREFIX = ['Crown of', 'Eye of', 'Scepter of', 'Tear of', 'Heart of', 'Chain of', 'Mirror of', 'Bell of', 'Ash-', 'Cup of'];
 const RELIC_NOUN = ['the First Dawn', 'the Drowned King', 'Endless Winter', 'the Last Oath', 'Seven Thunders', 'the Hollow Moon', 'the Ember Throne', 'the Silent Bell', 'the Broken Star', 'the Ninth Wave', 'the Nameless Saint', 'the Sleeping Mountain'];
+const RELIC_PREFIX_ES = ['Corona de', 'Ojo de', 'Cetro de', 'Lágrima de', 'Corazón de', 'Cadena de', 'Espejo de', 'Campana de', 'Ceniza de', 'Copa de'];
+const RELIC_NOUN_ES = ['la Primera Aurora', 'el Rey Ahogado', 'el Invierno Eterno', 'el Último Juramento', 'los Siete Truenos', 'la Luna Hueca', 'el Trono de Brasas', 'la Campana Silente', 'la Estrella Rota', 'la Novena Ola', 'el Santo sin Nombre', 'la Montaña Dormida'];
 
 export const RIVAL_POOL = [
   { name: 'Zeus', epithet: 'The Thunderer', pantheon: 'Olympian', domain: 'storm' },
@@ -468,7 +487,7 @@ export function fmt(n) {
   if (n >= 1e9) return (n / 1e9).toFixed(n >= 1e10 ? 0 : 1).replace(/\.0$/, '') + 'B';
   if (n >= 1e6) return (n / 1e6).toFixed(n >= 1e7 ? 1 : 2).replace(/\.0+$/, '') + 'M';
   if (n >= 1e4) return (n / 1e3).toFixed(1).replace(/\.0$/, '') + 'K';
-  if (n >= 1000) return n.toLocaleString('en-US');
+  if (n >= 1000) return n.toLocaleString(numberLocale);
   return String(n);
 }
 
@@ -538,7 +557,10 @@ export function missingReason(state, action) {
 export function makeRelic(state, rng = Math.random) {
   const m = combinedMods(state);
   const power = Math.round((260 + (state.rank || 0) * 150 + rng() * 180) * (1 + m.relicBonus));
-  const name = RELIC_PREFIX[Math.floor(rng() * RELIC_PREFIX.length)] + ' ' + RELIC_NOUN[Math.floor(rng() * RELIC_NOUN.length)];
+  const es = state.locale === 'es';
+  const prefixes = es ? RELIC_PREFIX_ES : RELIC_PREFIX;
+  const nouns = es ? RELIC_NOUN_ES : RELIC_NOUN;
+  const name = prefixes[Math.floor(rng() * prefixes.length)] + ' ' + nouns[Math.floor(rng() * nouns.length)];
   return { id: 'r' + Date.now() + Math.floor(rng() * 999), name, power };
 }
 
@@ -588,6 +610,7 @@ export function newGame(draft, rng = Math.random) {
     stats: { faith: 16, power: 12, wisdom: 10, influence: 8 },
     followers: 420,
     aeon: 1,
+    age: AGE_START,
     ap: 3,
     rank: 0,
     relics: [],
@@ -599,13 +622,19 @@ export function newGame(draft, rng = Math.random) {
     victory: false,
   };
   state.ap = apMax(state);
-  addLog(state, 'star4', `You wake in the space between prayers. The mortal world is small, loud, and entirely yours to shape.`, 'divine');
-  addLog(state, 'users', `The ${starter.name} are the first to speak your name. ${starter.desc}`, 'faith');
+  addLog(state, 'star4',
+    'You wake in the space between prayers. The mortal world is small, loud, and entirely yours to shape.',
+    'divine',
+    'Despiertas en el espacio entre plegarias. El mundo mortal es pequeño, ruidoso y completamente tuyo para moldearlo.');
+  addLog(state, 'users',
+    `The ${starter.name} are the first to speak your name. ${starter.desc}`,
+    'faith',
+    `Los ${starter.name} son los primeros en pronunciar tu nombre. ${starter.descEs || starter.desc}`);
   return state;
 }
 
-export function addLog(state, icon, text, tone = '') {
-  state.log.push({ aeon: state.aeon, icon, text, tone, at: Date.now() });
+export function addLog(state, icon, text, tone = '', textEs = '') {
+  state.log.push({ aeon: state.aeon, icon, text, textEs, tone, at: Date.now() });
   if (state.log.length > 90) state.log.splice(0, state.log.length - 90);
 }
 
@@ -637,7 +666,11 @@ export function passiveTick(state, rng = Math.random) {
     const r = state.rivals[Math.floor(rng() * state.rivals.length)];
     const boost = 1.02 + rng() * 0.04;
     r.might = Math.round(r.might * boost);
-    surges.push({ rival: r, text: `Cults of ${r.name} swell in the night. Their might rises sharply.` });
+    surges.push({
+      rival: r,
+      text: `Cults of ${r.name} swell in the night. Their might rises sharply.`,
+      textEs: `Los cultos de ${r.name} crecen en la noche. Su poder se dispara.`,
+    });
   }
   return { gains, surges };
 }
@@ -672,7 +705,10 @@ export function ascend(state) {
   state.stats.wisdom += 6;
   state.stats.influence += 4;
   state.ap = apMax(state);
-  addLog(state, 'crown', `You ascend from ${from.name} to ${to.name}. The heavens rearrange themselves around your throne.`, 'rank');
+  addLog(state, 'crown',
+    `You ascend from ${from.name} to ${to.name}. The heavens rearrange themselves around your throne.`,
+    'rank',
+    `Asciendes de ${from.name} a ${to.name}. Los cielos se reorganizan alrededor de tu trono.`);
   return { from, to, afterMight: computeMight(state), gainedMight: computeMight(state) - beforeMight };
 }
 
@@ -695,6 +731,7 @@ export function pickEvent(state, rng = Math.random) {
   const swap = str => (str || '').replace(/\{rival\}/g, rival ? rival.name : 'a rival god');
   clone.title = swap(clone.title);
   clone.text = swap(clone.text);
+  clone.rivalName = rival ? rival.name : 'a rival god';
   clone.choices = clone.choices.map(c => ({ ...c, result: swap(c.result) }));
   if (!state.seenEvents.includes(ev.id)) state.seenEvents.push(ev.id);
   return clone;
@@ -704,10 +741,14 @@ export function endAeon(state, rng = Math.random) {
   const before = rankMap(state);
   const { gains, surges } = passiveTick(state, rng);
   state.aeon += 1;
+  state.age = (state.age || AGE_START) + AGE_PER_AEON;
   state.ap = apMax(state);
   state.lastRanks = before;
   const text = `The world turns. ${fmt(gains.followers)} souls join your flock, and devotion gathers in the dark.`;
-  addLog(state, 'sun', text, 'faith');
-  for (const s of surges) addLog(state, 'crown', s.text, 'rival');
+  const textEs = `El mundo gira. ${fmt(gains.followers)} almas se unen a tu rebaño, y la devoción se reúne en la oscuridad.`;
+  addLog(state, 'sun', text, 'faith', textEs);
+  for (const s of surges) addLog(state, 'crown', s.text, 'rival', s.textEs);
+  const milestone = AGE_MILESTONES[state.age];
+  if (milestone) addLog(state, 'hourglass', milestone.en, 'divine', milestone.es);
   return { gains, surges, event: rng() < 0.72 ? pickEvent(state, rng) : null };
 }
