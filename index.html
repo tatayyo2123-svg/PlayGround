@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#08070f" />
+  <title>GODSPIRE — A God Life Simulator</title>
+  <meta name="description" content="Create a god, shape a race, gather worshippers and climb the twenty thrones of the divine." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2.6 14 10l7.4 2L14 14l-2 7.4L10 14 2.6 12 10 10Z' fill='%23e8c987'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <canvas id="starfield" aria-hidden="true"></canvas>
+  <div class="body-glow" aria-hidden="true"></div>
+
+  <div id="app">
+    <!-- ══════════ TITLE ══════════ -->
+    <section class="screen active" id="screen-title">
+      <div class="title-grid">
+        <div class="title-copy">
+          <div class="eyebrow"><span class="rule"></span>A life simulator of the divine<span class="rule"></span></div>
+          <h1 class="logo"><span class="logo-mark">✦</span><span class="logo-text">GODSPIRE</span></h1>
+          <p class="tagline">Every mortal is a prayer. Every prayer is a step.<br /><em>Climb until the stars kneel.</em></p>
+          <div class="title-actions">
+            <button class="btn primary xl" id="beginBtn">Begin Your Myth <span class="btn-arrow">→</span></button>
+            <button class="btn ghost xl" id="continueBtn" hidden>Continue Chronicle</button>
+            <button class="btn ghost xl" id="guideBtn">How to Play</button>
+          </div>
+          <div class="title-meta">
+            <span><strong>12</strong> domains</span><i></i><span><strong>8</strong> mortal races</span><i></i><span><strong>9</strong> divine ranks</span><i></i><span><strong>20</strong> thrones</span>
+          </div>
+        </div>
+        <div class="title-hero">
+          <div class="orbit orbit-a" aria-hidden="true"></div>
+          <div class="orbit orbit-b" aria-hidden="true"></div>
+          <div class="hero-frame" id="titlePortrait"></div>
+          <div class="hero-plaque">
+            <span>THE STORMLORD</span>
+            <strong id="titleHeroName">AURELION</strong>
+          </div>
+        </div>
+      </div>
+      <footer class="title-footer">
+        <span>Shape a face. Found a people. Take a throne.</span>
+        <span class="sep">✦</span>
+        <span>Progress saves in your browser</span>
+      </footer>
+    </section>
+
+    <!-- ══════════ CREATOR ══════════ -->
+    <section class="screen" id="screen-create">
+      <header class="topbar">
+        <button class="back-link" id="backToTitle">← Return to the Void</button>
+        <div class="brand-small"><span>✦</span> GODSPIRE</div>
+        <div class="step-label">I. Shape Your Divinity</div>
+      </header>
+
+      <div class="creator-grid">
+        <section class="preview-card panel ornate">
+          <div class="preview-glow" id="previewGlow"></div>
+          <div class="preview-frame">
+            <div class="portrait-shell creator-portrait" id="creatorPortrait"></div>
+            <div class="frame-corner tl"></div><div class="frame-corner tr"></div>
+            <div class="frame-corner bl"></div><div class="frame-corner br"></div>
+          </div>
+          <div class="preview-info">
+            <div class="preview-epithet" id="previewEpithet">THE STORMLORD</div>
+            <h2 class="preview-name" id="previewName">Aurelion</h2>
+            <div class="preview-chips" id="previewChips"></div>
+          </div>
+          <div class="preview-actions">
+            <button class="btn ghost small" id="randomizeBtn">⟳ &nbsp;Randomize visage</button>
+            <span class="preview-hint">Every detail is carved by you.</span>
+          </div>
+        </section>
+
+        <section class="editor-card panel">
+          <div class="editor-head">
+            <div>
+              <div class="kicker">The divine workshop</div>
+              <h1>Create Your God</h1>
+            </div>
+            <p>Choose a domain, a lineage, and the face the world will carve into its temples.</p>
+          </div>
+
+          <div class="identity-row">
+            <label class="field">
+              <span>Divine Name</span>
+              <input id="godName" maxlength="20" autocomplete="off" spellcheck="false" value="Aurelion" />
+            </label>
+            <label class="field">
+              <span>Epithet</span>
+              <input id="godEpithet" maxlength="28" autocomplete="off" spellcheck="false" value="The Stormlord" />
+            </label>
+            <label class="field">
+              <span>Pantheon</span>
+              <input id="godPantheon" maxlength="22" autocomplete="off" spellcheck="false" value="The New Order" />
+            </label>
+          </div>
+
+          <div class="tabs" role="tablist" id="creatorTabs">
+            <button class="tab active" role="tab" data-tab="face">Face</button>
+            <button class="tab" role="tab" data-tab="body">Body</button>
+            <button class="tab" role="tab" data-tab="eyes">Eyes</button>
+            <button class="tab" role="tab" data-tab="hair">Hair</button>
+            <button class="tab" role="tab" data-tab="divine">Divine</button>
+          </div>
+
+          <div class="tab-panels" id="creatorPanels"></div>
+
+          <footer class="creator-footer">
+            <div class="build-summary" id="buildSummary"></div>
+            <button class="btn primary" id="beginGameBtn">Enter the Mortal Realm <span class="btn-arrow">→</span></button>
+          </footer>
+        </section>
+      </div>
+    </section>
+
+    <!-- ══════════ GAME ══════════ -->
+    <section class="screen" id="screen-game" data-mtab="realm">
+      <header class="hud">
+        <div class="hud-id">
+          <div class="rank-crest" id="hudCrest"></div>
+          <div class="hud-id-text">
+            <div class="hud-name"><span id="hudName">Aurelion</span><span class="hud-rank" id="hudRank">Demigod</span></div>
+            <div class="hud-epithet" id="hudEpithet">The Stormlord · The New Order</div>
+          </div>
+        </div>
+        <div class="hud-might">
+          <span class="label">Divine Might</span>
+          <strong id="hudMight">1,237</strong>
+          <span class="hud-standing" id="hudStanding">#25</span>
+        </div>
+        <div class="hud-right">
+          <div class="hud-aeon"><span id="hudAeon">Aeon I</span><small id="hudDomain">Storm</small></div>
+          <button class="icon-btn" id="soundBtn" title="Toggle sound" aria-label="Toggle sound"></button>
+          <button class="icon-btn" id="menuBtn" title="Menu" aria-label="Menu"></button>
+        </div>
+      </header>
+
+      <main class="game-main">
+        <aside class="col col-god panel ornate" id="colGod">
+          <div class="mini-portrait" id="gamePortrait"></div>
+          <div class="god-title">
+            <div class="god-name" id="cardName">Aurelion</div>
+            <div class="god-sub" id="cardSub">Demigod · Storm</div>
+          </div>
+          <div class="might-block">
+            <div class="might-line"><span>Divine Might</span><strong id="cardMight">1,237</strong></div>
+            <div class="might-bar"><i id="mightBar"></i></div>
+            <div class="might-next" id="mightNext"></div>
+          </div>
+          <div class="followers-block">
+            <span class="label">Souls in your care</span>
+            <div><strong id="cardFollowers">420</strong><span class="trend" id="followersTrend"></span></div>
+          </div>
+          <div class="stat-grid" id="statGrid"></div>
+          <button class="btn ascend" id="ascendBtn"></button>
+          <div class="card-section">
+            <div class="section-head"><span>Worshipping Races</span><button class="mini-link" id="openRaceBtn">Forge a race</button></div>
+            <div class="race-chips" id="raceChips"></div>
+          </div>
+          <div class="card-section">
+            <div class="section-head"><span>Relics</span><span class="section-count" id="relicCount"></span></div>
+            <div class="relic-list" id="relicList"></div>
+          </div>
+        </aside>
+
+        <section class="col col-realm" id="colRealm">
+          <div class="aeon-bar panel">
+            <div class="aeon-title">
+              <span class="aeon-num" id="aeonLabel">Aeon I</span>
+              <span class="aeon-sub" id="aeonSub">The First Dawn</span>
+            </div>
+            <div class="ap-wrap">
+              <span>Divine actions</span>
+              <div class="ap-pips" id="apPips"></div>
+            </div>
+          </div>
+          <div class="actions-grid" id="actionsGrid"></div>
+          <div class="chronicle panel">
+            <header><span>Chronicle</span><small id="chronicleMeta">Newest first</small></header>
+            <div class="log" id="logList"></div>
+          </div>
+          <button class="end-turn" id="endTurnBtn">
+            <span>End Aeon</span>
+            <small>Let the world turn</small>
+            <span class="end-arrow">→</span>
+          </button>
+        </section>
+
+        <aside class="col col-board panel ornate" id="colBoard">
+          <header class="board-head">
+            <div>
+              <div class="board-kicker">The divine order</div>
+              <h2>The Twenty Thrones</h2>
+            </div>
+            <div class="board-crown" id="boardCrown"></div>
+          </header>
+          <ol class="leaderboard" id="leaderboard"></ol>
+          <div class="board-footer" id="playerStanding"></div>
+        </aside>
+      </main>
+
+      <nav class="mobile-tabs" aria-label="Game sections">
+        <button class="active" data-mtab="realm"><span>✦</span>Realm</button>
+        <button data-mtab="god"><span>◈</span>Self</button>
+        <button data-mtab="board"><span>♛</span>Thrones</button>
+      </nav>
+    </section>
+  </div>
+
+  <div id="modalRoot"></div>
+  <div id="toastRoot" aria-live="polite"></div>
+
+  <script type="module" src="game.js"></script>
+</body>
+</html>

@@ -1,4 +1,14 @@
-# PlayGround
+# GODSPIRE — A God Life Simulator
+
+A complete, playable browser game about creating a god, founding a people, and climbing the twenty thrones of the divine.
+
+- **Create a god:** layered portrait editor for face, body, eyes, hair, markings, crowns, domain, and lineage.
+- **Found a people:** choose a starter race or forge up to four custom races in the Genesis Forge.
+- **Climb the ranks:** nine divine ranks from Demigod to Supreme Architect, with ascension bonuses.
+- **Live a myth:** three divine actions per aeon, omens with choices, relic forging, rival gods, and a live top-twenty leaderboard.
+- **Save and continue:** progress persists in browser local storage.
+
+Open `index.html` through any static web server, or run `./start.sh`. Built as a zero-build vanilla ES-module app.
 
 <!-- omgithub:readme:start -->
 ## 🚀 Build, play, and remix with OMGithub
