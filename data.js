@@ -444,6 +444,42 @@ export const EVENTS = [
       { label: 'Hide your people', effects: { faith: 7, followersPct: 0.03, power: -2 }, result: 'You draw a mist over the cities. The titan passes through your land and sees only empty hills.' },
     ],
   },
+  {
+    id: 'conclave', title: 'The Gods\' Assembly',
+    text: '{rival} summons the divine powers to settle an ancient dispute. Your name is on the invitation, though no one admits who added it.',
+    choices: [
+      { label: 'Speak for the younger gods', effects: { influence: 5, wisdom: 3, power: -2 }, result: 'You give the unseated gods a voice. The old guard calls it insolence; the rest call it a beginning.' },
+      { label: 'Challenge the host', effects: { power: 6, followersPct: 0.04, influence: -3 }, result: 'You name the host a coward before the full assembly. The challenge is accepted, and every throne turns to watch.' },
+      { label: 'Leave with the secret', effects: { wisdom: 5, faith: 4, influence: 2 }, result: 'You uncover the real cause of the dispute and leave before anyone can ask what you know.' },
+    ],
+  },
+  {
+    id: 'true-name', title: 'The Name Beneath Your Name',
+    text: 'An oracle speaks a name no mortal should know. Across the world, your oldest shrines answer with a light you have not seen since your first prayer.',
+    choices: [
+      { label: 'Claim the name', effects: { power: 5, faith: 5, influence: -2 }, result: 'The name settles into you like a second heartbeat. Every shrine flares, and every rival feels the change.' },
+      { label: 'Give it to your priests', effects: { followersPct: 0.09, wisdom: 3, faith: -4 }, result: 'Your priests guard the syllables in a new sacred hymn. Pilgrims travel from distant lands to learn its refrain.' },
+      { label: 'Bury it again', effects: { wisdom: 5, influence: 2, power: -1 }, result: 'You seal the name beneath the first altar you ever raised. The oracle forgets it before sunrise.' },
+    ],
+  },
+  {
+    id: 'mortal-apotheosis', title: 'A Mortal Reaches for Heaven',
+    text: 'A beloved hero refuses the crown your priests offer and declares that mortals need no gods. Their words are stirring, and your temples are listening.',
+    choices: [
+      { label: 'Raise them as a demigod', effects: { faith: -8, influence: 5, followersPct: 0.06 }, result: 'You share a spark of divinity. The new demigod kneels to no one, but stands beside you.' },
+      { label: 'Debate them before the people', effects: { wisdom: 4, influence: 3, faith: 3 }, result: 'You meet beneath the open sky. Neither of you wins, and the people leave with better questions.' },
+      { label: 'Let their legend grow', effects: { followersPct: -0.04, power: 4, wisdom: 3 }, result: 'You do not interfere. Their legend grows—and your people learn that faith freely given is worth more.' },
+    ],
+  },
+  {
+    id: 'divine-envoy', title: 'An Envoy from Beyond the Veil',
+    text: 'A messenger arrives from a realm beyond mortal sight, bearing a treaty signed by gods whose constellations vanished before the first dawn.',
+    choices: [
+      { label: 'Sign the treaty', effects: { influence: 5, faith: 4, power: -2 }, result: 'The ink burns cold. Somewhere beyond the veil, an ancient power now knows your name.' },
+      { label: 'Demand a divine gift', effects: { power: 4, wisdom: 2, faith: -5 }, result: 'The envoy leaves a drop of starfire in your palm and a warning that it must never be spilled.' },
+      { label: 'Send the envoy away', effects: { wisdom: 4, followersPct: 0.04, influence: 1 }, result: 'You refuse to bind your fate to a vanished pantheon. The messenger bows, almost as if relieved.' },
+    ],
+  },
 ];
 
 export const FALLBACK_EVENTS = [
@@ -742,9 +778,12 @@ export function pickEvent(state, rng = Math.random) {
 
 export function endAeon(state, rng = Math.random) {
   const before = rankMap(state);
+  const currentAge = Number.isFinite(state.age) && state.age >= AGE_START
+    ? state.age
+    : AGE_START + Math.max(0, (state.aeon || 1) - 1) * AGE_PER_AEON;
   const { gains, surges } = passiveTick(state, rng);
   state.aeon += 1;
-  state.age = (state.age || AGE_START) + AGE_PER_AEON;
+  state.age = currentAge + AGE_PER_AEON;
   state.ap = apMax(state);
   state.lastRanks = before;
   const text = `The world turns. ${fmt(gains.followers)} souls join your flock, and devotion gathers in the dark.`;

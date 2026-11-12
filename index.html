@@ -199,6 +199,7 @@
               <div class="ap-pips" id="apPips"></div>
             </div>
           </div>
+          <button class="village-entry" id="visitVillageBtn"><span>⌂</span><span><b data-i18n="Visit your village">Visit your village</b><small data-i18n="See the mortal world beneath your skies">See the mortal world beneath your skies</small></span><i>→</i></button>
           <div class="actions-grid" id="actionsGrid"></div>
           <div class="chronicle panel">
             <header><span data-i18n="Chronicle">Chronicle</span><small id="chronicleMeta" data-i18n="Newest first">Newest first</small></header>
@@ -209,6 +210,11 @@
             <small data-i18n="Let the world turn">Let the world turn</small>
             <span class="end-arrow">→</span>
           </button>
+        </section>
+
+        <section class="col col-village panel ornate" id="colVillage" aria-labelledby="villageTitle">
+          <div class="village-top"><div><div class="village-kicker" data-i18n="The mortal realm">The mortal realm</div><h2 id="villageTitle" data-i18n="Your village">Your village</h2></div><button class="village-back" id="leaveVillageBtn" data-i18n="← Return to realm">← Return to realm</button></div>
+          <div id="villageContent"></div>
         </section>
 
         <aside class="col col-board panel ornate" id="colBoard">
@@ -226,6 +232,7 @@
 
       <nav class="mobile-tabs" aria-label="Game sections">
         <button class="active" data-mtab="realm"><span>✦</span><span data-i18n="Realm">Realm</span></button>
+        <button data-mtab="village"><span>⌂</span><span data-i18n="Village">Village</span></button>
         <button data-mtab="god"><span>◈</span><span data-i18n="Self">Self</span></button>
         <button data-mtab="board"><span>♛</span><span data-i18n="Thrones">Thrones</span></button>
       </nav>

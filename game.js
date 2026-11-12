@@ -6,6 +6,7 @@ import {
   endAeon, applyEventChoice, pickEvent, addLog, RIVAL_POOL, setNumberLocale,
 } from './data.js';
 import { renderPortrait } from './portrait.js';
+import { rivalPortrait } from './rival-portrait.js';
 import { icon, DOMAIN_ICONS, STAT_ICONS, TRAIT_ICONS, RACE_ICONS } from './icons.js';
 import { t, setLang, isEs, applyStatic, localizedEvent, ACTION_TEXT_ES } from './i18n.js';
 
@@ -445,9 +446,15 @@ function beginGame() {
 /* ══════════ game shell ══════════ */
 function enterGame() {
   showScreen('screen-game');
-  $('#screen-game').dataset.mtab = 'realm';
-  $$('.mobile-tabs button').forEach(b => b.classList.toggle('active', b.dataset.mtab === 'realm'));
+  showGameSection('realm');
   renderGame();
+}
+
+function showGameSection(section) {
+  const screen = $('#screen-game');
+  screen.dataset.mtab = section;
+  if (section === 'realm' || section === 'village') screen.dataset.view = section;
+  $$('.mobile-tabs button').forEach(b => b.classList.toggle('active', b.dataset.mtab === section));
 }
 
 function saveGame() {
@@ -571,9 +578,36 @@ function renderGame() {
   $('#stickNote').hidden = !state.attractiveStick;
 
   renderActions();
+  renderVillage();
   renderLog();
   renderBoard(stand, might);
   saveGame();
+}
+
+function renderVillage() {
+  const souls = Math.max(0, state.followers);
+  const stage = souls >= 5000 ? 2 : souls >= 1500 ? 1 : 0;
+  const stages = ['A humble settlement', 'A growing village', 'A flourishing town'];
+  const houses = [
+    [67, 206, 1], [150, 225, .8], [471, 211, .9], [556, 229, .75],
+    [227, 247, .65], [406, 247, .68], [22, 251, .65], [592, 265, .55],
+  ].slice(0, [4, 6, 8][stage]).map(([x, y, scale]) => `<g transform="translate(${x} ${y}) scale(${scale})"><path d="M0 30 L40 2 L80 30 V70 H0Z" fill="#b39b81"/><path d="M-7 32 L40 -2 L87 32 L81 37 L40 10 L0 37Z" fill="#654b50"/><path d="M31 70 V43 Q40 34 49 43 V70" fill="#3b343b"/><path d="M10 42h12v12H10z M58 42h12v12H58z" fill="#edcb85"/></g>`).join('');
+  const races = state.races.map(r => esc(r.custom ? r.name : t(r.name))).join(' · ') || '—';
+  $('#villageContent').innerHTML = `
+    <div class="village-scene" role="img" aria-label="${esc(t('A settlement beneath your divine light'))}">
+      <svg viewBox="0 0 680 340" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <defs><linearGradient id="villageSky" x2="0" y2="1"><stop stop-color="#292a48"/><stop offset="1" stop-color="#b08078"/></linearGradient><radialGradient id="villageGlow"><stop stop-color="#ffe4a1" stop-opacity=".75"/><stop offset="1" stop-color="#ffe4a1" stop-opacity="0"/></radialGradient></defs>
+        <path fill="url(#villageSky)" d="M0 0h680v340H0z"/><circle cx="340" cy="97" r="105" fill="url(#villageGlow)"/><circle cx="340" cy="98" r="30" fill="#f2d8a4" opacity=".8"/>
+        <path d="M0 196L100 105l74 74 75-83 82 90 76-104 91 103 80-74 102 89v140H0Z" fill="#555567"/><path d="M0 220Q100 163 195 210T390 195T680 211v129H0Z" fill="#454d4e"/>
+        <path d="M0 265 Q185 190 340 251 T680 245 V340H0Z" fill="#72775f"/><path d="M270 340 Q320 275 337 242 Q350 278 438 340Z" fill="#b1a184" opacity=".7"/>
+        <g transform="translate(286 148)"><path d="M0 48L54 9l54 39v87H0Z" fill="#d5bea0"/><path d="M-8 48L54 1l62 47-7 6L54 15 0 54Z" fill="#67545a"/><path d="M37 135V84q17-21 34 0v51" fill="#4a4246"/><path d="M45 45h18v22H45z" fill="#f4d595"/><path d="M54 1v-24 M45-14h18" stroke="#ebd19c" stroke-width="3"/></g>
+        ${houses}<path d="M0 310 Q100 288 191 316T377 313T680 301V340H0Z" fill="#343d3a" opacity=".55"/>
+      </svg>
+      <div class="village-scene-caption"><span>${esc(t('Aeon {n}', { n: roman(state.aeon) }))}</span><strong>${esc(t(stages[stage]))}</strong></div>
+    </div>
+    <p class="village-intro">${esc(t('From your shrine, the mortal world grows with your followers.'))}</p>
+    <div class="village-facts"><div><span>${esc(t('Souls in your care'))}</span><strong>${fmt(souls)}</strong></div><div><span>${esc(t('Worshipping Races'))}</span><strong>${races}</strong></div><div><span>${esc(t('Divine domain'))}</span><strong>${esc(domainName(domainOf(state.god.domain)))}</strong></div></div>
+    <p class="village-note">${esc(t('The village changes as your following grows. Return to the realm to shape its future.'))}</p>`;
 }
 
 function relationshipWith(name) {
@@ -752,10 +786,11 @@ function bindGame() {
     openRelicModal(r);
   });
 
+  $('#visitVillageBtn').addEventListener('click', () => { showGameSection('village'); playSound('click'); });
+  $('#leaveVillageBtn').addEventListener('click', () => { showGameSection('realm'); playSound('click'); });
   $('.mobile-tabs').addEventListener('click', e => {
     const btn = e.target.closest('[data-mtab]'); if (!btn) return;
-    $$('.mobile-tabs button').forEach(b => b.classList.toggle('active', b === btn));
-    $('#screen-game').dataset.mtab = btn.dataset.mtab;
+    showGameSection(btn.dataset.mtab);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     playSound('click');
   });
@@ -871,12 +906,13 @@ function openRivalModal(r) {
   openModal(`${closeBtn()}
     <div class="modal-kicker">${esc(t('{domain} deity', { domain: domainName(dd) }))} · ${esc(t(r.pantheon))}</div>
     <div class="rival-card" style="--accent:${dd.color};--accent-soft:${rgba(dd.color, 0.16)}">
-      <div class="rival-sigil">${icon(DOMAIN_ICONS[dd.id])}</div>
+      <div class="rival-sigil" style="overflow:hidden">${rivalPortrait(r)}</div>
       <div><h2 style="font-size:28px">${esc(r.name)}</h2><div class="rival-meta">${esc(t(r.epithet))}</div><div class="rival-might">${fmt(r.might)} <span style="font-size:10px;font-family:var(--sans);letter-spacing:.12em;color:var(--muted-2)">${esc(t('MIGHT'))} · #${rank}</span></div></div>
     </div>
     <p class="modal-text" style="margin-top:18px">${esc(t(lore[r.domain] || 'They watch your rise with the patience of something older than patience.'))}</p>
     <div class="result-changes">${tagHtml(t('{domain} domain', { domain: domainName(dd) }), true)}${tagHtml(t('Cult growth +{n}% / aeon', { n: Math.round(r.growth * 1000) / 10 }))}</div>
-    <div class="modal-actions"><button class="btn ghost" data-close>${esc(t('Withdraw'))}</button></div>`);
+    <div class="modal-actions"><button class="btn ghost" data-close>${esc(t('Withdraw'))}</button><button class="btn primary" id="meetRival">${esc(t('Visit Olympus'))}</button></div>`);
+  $('#meetRival').addEventListener('click', () => openGodMeeting(r));
 }
 
 
@@ -910,7 +946,7 @@ function openOlympus() {
     <p class="modal-text">A quiet terrace above the clouds, where the old powers gather between aeons. Choose a god to approach.</p>
     <div class="olympus-list">${gods.map(r => {
       const dd = domainOf(r.domain), rel = relationshipWith(r.name);
-      return `<button class="olympus-row olympus-god" data-god="${esc(r.name)}"><span class="olympus-sigil" style="color:${dd.color}">${icon(DOMAIN_ICONS[dd.id])}</span><span class="olympus-person"><strong>${esc(r.name)}</strong><small>${esc(domainName(dd))} deity · ${esc(rel ? relationStatus(rel.affection) : 'Unmet')}</small></span><span class="olympus-affection">${rel ? `${rel.affection} ♥` : 'Meet →'}</span></button>`;
+      return `<button class="olympus-row olympus-god" data-god="${esc(r.name)}"><span class="olympus-sigil" style="color:${dd.color};overflow:hidden">${rivalPortrait(r)}</span><span class="olympus-person"><strong>${esc(r.name)}</strong><small>${esc(domainName(dd))} deity · ${esc(rel ? relationStatus(rel.affection) : 'Unmet')}</small></span><span class="olympus-affection">${rel ? `${rel.affection} ♥` : 'Meet →'}</span></button>`;
     }).join('')}</div>`, 'social-modal');
   $$('#modalRoot [data-god]').forEach(btn => btn.addEventListener('click', () => {
     const rival = state.rivals.find(r => r.name === btn.dataset.god);
@@ -929,7 +965,7 @@ function openGodMeeting(rival) {
   const maxed = rel.affection >= 100;
   openModal(`${closeBtn()}
     <div class="modal-kicker">A god of ${esc(domainName(dd))} · ${esc(t(rival.pantheon))}</div>
-    <h2>${esc(rival.name)}</h2>
+    <div class="rival-card"><div class="rival-sigil" style="overflow:hidden">${rivalPortrait(rival)}</div><div><h2>${esc(rival.name)}</h2><div class="rival-meta">${esc(t(rival.epithet))}</div></div></div>
     <p class="modal-text">You find ${esc(rival.name)} beneath an arch of cloud-marble. The conversation can become a friendship, a rivalry, or something the bards will exaggerate.</p>
     <div class="relationship-meter"><span>${esc(relationStatus(rel.affection))}</span><strong>${rel.affection}<small> / 100</small></strong><i><b style="width:${rel.affection}%"></b></i></div>
     <div class="social-actions">

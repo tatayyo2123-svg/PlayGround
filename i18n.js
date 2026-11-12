@@ -573,7 +573,20 @@ const ES = {
   'The New Order': 'El Nuevo Orden',
   'Relic': 'Reliquia',
   'Domain of': 'Dominio de',
-  'Worshipped by': 'Adorado por'
+  'Worshipped by': 'Adorado por',
+  'Visit your village': 'Visita tu aldea',
+  'See the mortal world beneath your skies': 'Contempla el mundo mortal bajo tus cielos',
+  'The mortal realm': 'El reino mortal',
+  'Your village': 'Tu aldea',
+  '← Return to realm': '← Volver al reino',
+  'Village': 'Aldea',
+  'A humble settlement': 'Un humilde asentamiento',
+  'A growing village': 'Una aldea en crecimiento',
+  'A flourishing town': 'Una ciudad floreciente',
+  'A settlement beneath your divine light': 'Un asentamiento bajo tu luz divina',
+  'From your shrine, the mortal world grows with your followers.': 'Desde tu santuario, el mundo mortal crece junto a tus seguidores.',
+  'Divine domain': 'Dominio divino',
+  'The village changes as your following grows. Return to the realm to shape its future.': 'La aldea cambia a medida que crecen tus seguidores. Vuelve al reino para forjar su futuro.'
 };
 
 export function t(key, vars) {
@@ -771,6 +784,42 @@ export const EVENT_ES = {
       { label: 'Enfrentarlo en batalla', result: 'Luchas un día y una noche. El titán se arrodilla al anochecer. Tu pueblo construye una colina con las piedras caídas.' },
       { label: 'Guiarlo lejos', result: 'Caminas a su lado durante cien millas, cantando las canciones antiguas. Gira hacia el sur, lejos de tus ciudades, y nunca regresa.' },
       { label: 'Ocultar a tu pueblo', result: 'Extiendes una niebla sobre las ciudades. El titán atraviesa tu tierra y solo ve colinas vacías.' }
+    ]
+  },
+  conclave: {
+    title: 'La asamblea de los dioses',
+    text: '{rival} convoca a las potencias divinas para resolver una disputa ancestral. Tu nombre figura en la invitación, aunque nadie admite quién lo añadió.',
+    choices: [
+      { label: 'Hablar por los dioses jóvenes', result: 'Das voz a los dioses sin trono. Los antiguos lo llaman insolencia; los demás, un comienzo.' },
+      { label: 'Desafiar al anfitrión', result: 'Llamas cobarde al anfitrión ante toda la asamblea. Acepta el desafío, y todos los tronos se vuelven a mirar.' },
+      { label: 'Irte con el secreto', result: 'Descubres la verdadera causa de la disputa y te marchas antes de que alguien pueda preguntar qué sabes.' }
+    ]
+  },
+  'true-name': {
+    title: 'El nombre bajo tu nombre',
+    text: 'Un oráculo pronuncia un nombre que ningún mortal debería conocer. Por todo el mundo, tus santuarios más antiguos responden con una luz que no veías desde tu primera plegaria.',
+    choices: [
+      { label: 'Reclamar el nombre', result: 'El nombre se asienta en ti como un segundo latido. Cada santuario resplandece, y todos los rivales sienten el cambio.' },
+      { label: 'Entregárselo a tus sacerdotes', result: 'Tus sacerdotes protegen las sílabas en un nuevo himno sagrado. Peregrinos de tierras lejanas viajan para aprender el estribillo.' },
+      { label: 'Volver a enterrarlo', result: 'Sellas el nombre bajo el primer altar que levantaste. El oráculo lo olvida antes del amanecer.' }
+    ]
+  },
+  'mortal-apotheosis': {
+    title: 'Un mortal aspira al cielo',
+    text: 'Un héroe amado rechaza la corona que ofrecen tus sacerdotes y declara que los mortales no necesitan dioses. Sus palabras conmueven, y tus templos escuchan.',
+    choices: [
+      { label: 'Alzarlo como semidiós', result: 'Compartes con él una chispa divina. El nuevo semidiós no se arrodilla ante nadie, pero permanece a tu lado.' },
+      { label: 'Debatir ante el pueblo', result: 'Os encontráis bajo el cielo abierto. Ninguno vence, y el pueblo se marcha con mejores preguntas.' },
+      { label: 'Dejar crecer su leyenda', result: 'No intervienes. Su leyenda crece, y tu pueblo aprende que la fe ofrecida libremente vale más.' }
+    ]
+  },
+  'divine-envoy': {
+    title: 'Un emisario tras el velo',
+    text: 'Llega un mensajero de un reino más allá de la vista mortal, con un tratado firmado por dioses cuyas constelaciones desaparecieron antes de la primera aurora.',
+    choices: [
+      { label: 'Firmar el tratado', result: 'La tinta arde con frialdad. En algún lugar tras el velo, una potencia antigua ya conoce tu nombre.' },
+      { label: 'Exigir un don divino', result: 'El emisario deja una gota de fuego estelar en tu palma y te advierte que nunca debes derramarla.' },
+      { label: 'Despedir al emisario', result: 'Te niegas a atar tu destino a un panteón desaparecido. El mensajero se inclina, casi con alivio.' }
     ]
   },
   'omen-1': {

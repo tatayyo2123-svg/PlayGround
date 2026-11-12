@@ -990,3 +990,43 @@ svg { display: block; }
   .olympus-row { padding: 10px; }
   .social-modal .modal-actions { justify-content: stretch; }
 }
+
+/* The mortal settlement */
+.village-entry { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 15px; text-align: left; color: var(--gold-hi); background: linear-gradient(110deg, rgba(125,99,66,.22), rgba(31,29,44,.8)); border: 1px solid var(--line-strong); border-radius: 12px; cursor: pointer; }
+.village-entry > span:first-child { font-size: 24px; color: var(--gold); line-height: 1; }
+.village-entry > span:nth-child(2) { flex: 1; }
+.village-entry b, .village-entry small { display: block; }
+.village-entry b { font-family: var(--serif); font-size: 15px; font-weight: 500; }
+.village-entry small { color: var(--muted); font-size: 10px; }
+.village-entry i { font-style: normal; color: var(--gold); }
+.village-entry:hover, .village-back:hover { border-color: var(--gold); }
+.col-village { display: none; flex-direction: column; padding: 20px; overflow-y: auto; }
+.village-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 15px; }
+.village-top h2 { font: 26px var(--serif); color: var(--gold-hi); margin: 0; }
+.village-kicker { color: var(--gold-dim); text-transform: uppercase; letter-spacing: .18em; font-size: 9px; }
+.village-back { background: transparent; color: var(--gold); border: 1px solid var(--line-strong); border-radius: 8px; padding: 8px 10px; cursor: pointer; font-size: 10px; }
+.village-scene { position: relative; overflow: hidden; border: 1px solid var(--line-strong); border-radius: 12px; background: #33384a; aspect-ratio: 2 / 1; }
+.village-scene svg { display: block; width: 100%; height: 100%; }
+.village-scene-caption { position: absolute; inset: auto 0 0; padding: 30px 16px 12px; background: linear-gradient(transparent, rgba(12,12,19,.85)); }
+.village-scene-caption span, .village-scene-caption strong { display: block; }
+.village-scene-caption span { color: var(--gold); font-size: 9px; text-transform: uppercase; letter-spacing: .18em; }
+.village-scene-caption strong { font: 21px var(--serif); color: #fff1d2; }
+.village-intro { color: var(--muted); font: italic 14px var(--serif); margin: 16px 0; }
+.village-facts { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
+.village-facts > div { background: rgba(255,255,255,.035); border: 1px solid var(--line); border-radius: 9px; padding: 10px; min-width: 0; }
+.village-facts span, .village-facts strong { display: block; }
+.village-facts span { font-size: 9px; color: var(--muted-2); text-transform: uppercase; letter-spacing: .09em; }
+.village-facts strong { font: 16px var(--serif); color: var(--gold-hi); overflow-wrap: anywhere; margin-top: 4px; }
+.village-note { font-size: 11px; color: var(--muted-2); line-height: 1.6; }
+@media (min-width: 1101px) {
+  #screen-game[data-view="village"] .col-realm { display: none; }
+  #screen-game[data-view="village"] .col-village { display: flex; }
+}
+@media (max-width: 1100px) {
+  #screen-game[data-mtab="village"] .col-village { display: flex; }
+}
+@media (max-width: 480px) {
+  .col-village { padding: 14px; }
+  .village-facts { grid-template-columns: 1fr; }
+  .village-scene { aspect-ratio: 1.5 / 1; }
+}
