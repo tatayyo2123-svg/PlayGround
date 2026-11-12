@@ -913,3 +913,80 @@ svg { display: block; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
 }
+
+
+/* ─────────── Olympus, relationships & luxury purchases ─────────── */
+.relationship-box {
+  padding: 10px 11px;
+  border: 1px solid rgba(232, 201, 135, 0.13);
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(232, 201, 135, 0.045), rgba(255, 255, 255, 0.012));
+}
+.relationship-box .section-head { margin-bottom: 8px; }
+.relationship-summary { min-height: 30px; }
+.relationship-empty { color: var(--muted-2); font: italic 11px/1.5 var(--serif); }
+.relationship-empty.large { padding: 20px; text-align: center; border: 1px dashed var(--line); border-radius: 12px; }
+.relation-chip { display: grid; grid-template-columns: 19px minmax(0, 1fr); align-items: center; column-gap: 6px; }
+.relation-chip > span { grid-row: span 2; color: #eaa5ba; font-size: 15px; }
+.relation-chip strong { overflow: hidden; color: var(--text); font: 500 13px var(--serif); text-overflow: ellipsis; white-space: nowrap; }
+.relation-chip small { color: var(--muted-2); font-size: 8px; letter-spacing: 0.04em; }
+.relationship-box > .mini-link { margin-top: 8px; }
+.feature-link {
+  display: flex; align-items: center; gap: 10px; width: 100%; margin-top: 8px; padding: 9px 10px;
+  border: 1px solid rgba(232, 201, 135, 0.12); border-radius: 10px;
+  background: rgba(255, 255, 255, 0.018); color: var(--gold); text-align: left;
+  transition: background 0.18s, border-color 0.18s, transform 0.18s;
+}
+.feature-link:hover { transform: translateY(-1px); border-color: var(--line-strong); background: rgba(232, 201, 135, 0.06); }
+.feature-link > span:first-child { width: 22px; flex: none; text-align: center; font-size: 18px; }
+.feature-link > span:nth-child(2) { min-width: 0; flex: 1; }
+.feature-link b, .feature-link small { display: block; }
+.feature-link b { color: var(--text); font: 500 12px var(--serif); }
+.feature-link small { margin-top: 2px; color: var(--muted-2); font-size: 8px; letter-spacing: 0.03em; }
+.feature-link > i { color: var(--gold-dim); font-size: 13px; font-style: normal; }
+.stick-note { margin: 8px 2px 0; color: var(--gold); font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase; }
+.stick-note[hidden] { display: none; }
+
+.social-modal { width: min(650px, 100%); }
+.olympus-list, .salon-list { display: flex; flex-direction: column; gap: 8px; margin-top: 18px; }
+.olympus-row {
+  display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.075); border-radius: 11px;
+  background: rgba(255, 255, 255, 0.025); color: var(--text); text-align: left;
+}
+.olympus-god { transition: border-color 0.18s, background 0.18s, transform 0.18s; }
+.olympus-god:hover { transform: translateX(2px); border-color: var(--line-strong); background: rgba(232, 201, 135, 0.055); }
+.olympus-sigil { width: 33px; height: 33px; flex: none; display: grid; place-items: center; border: 1px solid currentColor; border-radius: 50%; background: rgba(255,255,255,.025); }
+.olympus-sigil .icon { width: 16px; height: 16px; }
+.olympus-person { min-width: 0; flex: 1; }
+.olympus-person strong, .olympus-person small, .olympus-row > div strong, .olympus-row > div small { display: block; }
+.olympus-person strong, .olympus-row > div strong { font: 500 15px var(--serif); }
+.olympus-person small, .olympus-row > div small { margin-top: 3px; color: var(--muted-2); font-size: 9px; letter-spacing: .05em; }
+.olympus-affection { color: var(--gold); font-size: 9px; letter-spacing: .08em; white-space: nowrap; }
+.relationship-meter { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 5px 12px; margin: 18px 0 14px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.02); }
+.relationship-meter > span { color: var(--muted); font: italic 13px var(--serif); }
+.relationship-meter > strong { color: var(--gold-hi); font: 20px var(--serif); }
+.relationship-meter > strong small { color: var(--muted-2); font-size: 10px; }
+.relationship-meter > i { grid-column: 1 / -1; height: 4px; overflow: hidden; border-radius: 99px; background: rgba(255,255,255,.08); }
+.relationship-meter > i b { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #a76e9b, #f0c98e); transition: width .3s ease; }
+.social-actions { display: flex; flex-direction: column; gap: 8px; }
+.social-actions .choice { width: 100%; }
+.social-actions .choice:disabled { opacity: .42; }
+.salon-card { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid rgba(232, 201, 135, .12); border-radius: 12px; background: linear-gradient(120deg, rgba(232, 201, 135, .04), rgba(255,255,255,.015)); }
+.salon-mark { width: 34px; height: 34px; flex: none; display: grid; place-items: center; border: 1px solid rgba(232, 201, 135, .22); border-radius: 10px; color: var(--gold); font-size: 17px; }
+.salon-copy { min-width: 0; flex: 1; }
+.salon-copy strong { color: var(--text); font: 500 15px var(--serif); }
+.salon-copy p { margin: 3px 0 5px; color: var(--muted); font: 12px/1.4 var(--serif); }
+.salon-copy small { color: var(--gold-dim); font-size: 8px; letter-spacing: .08em; text-transform: uppercase; }
+.salon-card .btn { flex: none; min-width: 82px; padding: 8px 11px; font-size: 8px; }
+.salon-card .btn:disabled { opacity: .58; cursor: default; }
+.stick-card { border-color: rgba(186, 152, 226, .22); background: linear-gradient(120deg, rgba(160, 122, 214, .065), rgba(255,255,255,.015)); }
+.stick-card .salon-mark { color: #cbb0ed; border-color: rgba(186, 152, 226, .3); }
+@media (max-width: 760px) {
+  .feature-link { padding: 11px; }
+  .salon-card { align-items: flex-start; flex-wrap: wrap; }
+  .salon-copy { flex-basis: calc(100% - 50px); }
+  .salon-card .btn { margin-left: 46px; }
+  .olympus-row { padding: 10px; }
+  .social-modal .modal-actions { justify-content: stretch; }
+}

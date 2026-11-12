@@ -14,6 +14,12 @@ const $$ = sel => Array.from(document.querySelectorAll(sel));
 const SAVE_KEY = 'godspire.save.v1';
 const AEON_TITLES = ['The First Dawn', 'The Gathering', 'The Age of Temples', 'The Long Summer', 'The Turning', 'The Age of Kings', 'The Holy Wars', 'The Quiet Sky', 'The Gilded Age', 'The Last Silence', 'The Starfall'];
 const MOOD_COLORS = { serene: '#9fd9c4', radiant: '#ffd77a', triumphant: '#e8c987', wrathful: '#ff8a5c', weary: '#a58cff', restless: '#7fb8ff', ancient: '#d9b36b' };
+const LUXURY_HAIR = [
+  { id: 'silk-flow', name: 'Silk waterfall', style: 'flowing', faith: 22, power: 4, detail: 'Hand-combed moon-silk, cascading like a divine river.' },
+  { id: 'golden-braids', name: 'Golden-thread braids', style: 'braided', faith: 28, power: 5, detail: 'Braided with threads spun from the first sunrise.' },
+  { id: 'star-curls', name: 'Starborn curls', style: 'curls', faith: 34, power: 6, detail: 'Each curl catches a tiny, impossible constellation.' },
+  { id: 'oracle-locs', name: 'Oracle locs', style: 'locs', faith: 40, power: 8, detail: 'Adorned with miniature charms from forgotten temples.' },
+];
 
 let uiLang = 'en';
 try { uiLang = localStorage.getItem('godspire.lang') === 'es' ? 'es' : 'en'; } catch (e) { /* noop */ }
@@ -457,6 +463,9 @@ function loadSaved() {
     state = parsed;
     if (!state.lastRanks) state.lastRanks = {};
     if (!state.age) state.age = 18 + Math.max(0, (state.aeon || 1) - 1) * 3;
+    if (!Array.isArray(state.relationships)) state.relationships = [];
+    if (!Array.isArray(state.salonPurchases)) state.salonPurchases = [];
+    if (typeof state.attractiveStick !== 'boolean') state.attractiveStick = false;
     state.locale = uiLang;
     return true;
   } catch (e) { return false; }
@@ -558,11 +567,25 @@ function renderGame() {
     ? state.relics.map((r, i) => `<div class="relic-row" data-relic="${i}">${icon('gem')}<span>${esc(r.name)}</span><b>+${fmt(r.power)}</b></div>`).join('')
     : `<div class="relic-empty">${esc(t('No relics yet. Make something holy.'))}</div>`;
   $('#relicCount').textContent = state.relics.length ? `${state.relics.length} ${t('forged')}` : '';
+  renderRelationshipBox();
+  $('#stickNote').hidden = !state.attractiveStick;
 
   renderActions();
   renderLog();
   renderBoard(stand, might);
   saveGame();
+}
+
+function relationshipWith(name) {
+  return state.relationships.find(rel => rel.name === name) || null;
+}
+
+function renderRelationshipBox() {
+  const rels = [...state.relationships].sort((a, b) => b.affection - a.affection);
+  $('#relationshipCount').textContent = rels.length ? `${rels.length} ${t('known')}` : '';
+  $('#relationshipSummary').innerHTML = rels.length
+    ? `<div class="relation-chip"><span>♡</span><strong>${esc(rels[0].name)}</strong><small>${esc(rels[0].status || 'Acquaintance')} · ${rels[0].affection}/100</small></div>`
+    : `<div class="relationship-empty">No divine ties yet. Olympus awaits.</div>`;
 }
 
 function renderActions() {
@@ -671,6 +694,9 @@ function bindGame() {
   });
 
   $('#openRaceBtn').addEventListener('click', openRaceForge);
+  $('#openRelationshipBtn').addEventListener('click', openRelationshipBox);
+  $('#olympusBtn').addEventListener('click', openOlympus);
+  $('#salonBtn').addEventListener('click', openHairAtelier);
   $('#ascendBtn').addEventListener('click', () => {
     if (!canAscend(state)) {
       toast(t('You are not yet mighty enough to ascend.'), true);
@@ -854,6 +880,119 @@ function openRivalModal(r) {
 }
 
 
+function relationStatus(affection) {
+  if (affection >= 75) return 'Beloved ally';
+  if (affection >= 45) return 'Trusted friend';
+  if (affection >= 20) return 'Friendly';
+  return affection > 0 ? 'Acquaintance' : 'Distant';
+}
+
+function openRelationshipBox() {
+  const rels = [...state.relationships].sort((a, b) => b.affection - a.affection);
+  openModal(`${closeBtn()}
+    <div class="modal-kicker">The ties that bind Olympus</div>
+    <h2>Relationship Box</h2>
+    <p class="modal-text">Friendships between gods are forged in visits, gifts, and the occasional shared ambrosia.</p>
+    ${rels.length ? `<div class="olympus-list">${rels.map(rel => `<div class="olympus-row"><div><strong>${esc(rel.name)}</strong><small>${esc(rel.status || relationStatus(rel.affection))} · ${rel.affection}/100 affection</small></div><button class="btn ghost" data-visit="${esc(rel.name)}">Visit</button></div>`).join('')}</div>` : `<div class="relationship-empty large">Your relationship box is empty. Meet someone in Olympus to begin a story.</div>`}
+    <div class="modal-actions"><button class="btn primary" id="boxOlympus">Visit Olympus</button></div>`, 'social-modal');
+  $('#boxOlympus').addEventListener('click', openOlympus);
+  $$('#modalRoot [data-visit]').forEach(btn => btn.addEventListener('click', () => {
+    const rival = state.rivals.find(r => r.name === btn.dataset.visit);
+    if (rival) openGodMeeting(rival);
+  }));
+}
+
+function openOlympus() {
+  const gods = [...state.rivals].sort((a, b) => a.name.localeCompare(b.name));
+  openModal(`${closeBtn()}
+    <div class="modal-kicker">Beyond the mortal heavens</div>
+    <h2>The Gardens of Olympus</h2>
+    <p class="modal-text">A quiet terrace above the clouds, where the old powers gather between aeons. Choose a god to approach.</p>
+    <div class="olympus-list">${gods.map(r => {
+      const dd = domainOf(r.domain), rel = relationshipWith(r.name);
+      return `<button class="olympus-row olympus-god" data-god="${esc(r.name)}"><span class="olympus-sigil" style="color:${dd.color}">${icon(DOMAIN_ICONS[dd.id])}</span><span class="olympus-person"><strong>${esc(r.name)}</strong><small>${esc(domainName(dd))} deity · ${esc(rel ? relationStatus(rel.affection) : 'Unmet')}</small></span><span class="olympus-affection">${rel ? `${rel.affection} ♥` : 'Meet →'}</span></button>`;
+    }).join('')}</div>`, 'social-modal');
+  $$('#modalRoot [data-god]').forEach(btn => btn.addEventListener('click', () => {
+    const rival = state.rivals.find(r => r.name === btn.dataset.god);
+    if (rival) openGodMeeting(rival);
+  }));
+}
+
+function openGodMeeting(rival) {
+  let rel = relationshipWith(rival.name);
+  if (!rel) {
+    rel = { name: rival.name, affection: 0, met: false, status: 'Distant' };
+    state.relationships.push(rel);
+  }
+  const dd = domainOf(rival.domain);
+  const meetDisabled = rel.met;
+  const maxed = rel.affection >= 100;
+  openModal(`${closeBtn()}
+    <div class="modal-kicker">A god of ${esc(domainName(dd))} · ${esc(t(rival.pantheon))}</div>
+    <h2>${esc(rival.name)}</h2>
+    <p class="modal-text">You find ${esc(rival.name)} beneath an arch of cloud-marble. The conversation can become a friendship, a rivalry, or something the bards will exaggerate.</p>
+    <div class="relationship-meter"><span>${esc(relationStatus(rel.affection))}</span><strong>${rel.affection}<small> / 100</small></strong><i><b style="width:${rel.affection}%"></b></i></div>
+    <div class="social-actions">
+      <button class="choice" id="meetGod" ${meetDisabled ? 'disabled' : ''}><span class="ch-label">${meetDisabled ? 'Already introduced' : 'Make an introduction'}</span><span class="ch-tags">${meetDisabled ? 'A first meeting is remembered.' : '+8 affection · free'}</span></button>
+      <button class="choice" id="shareAmbrosia" ${maxed || state.stats.faith < 8 ? 'disabled' : ''}><span class="ch-label">Share ambrosia</span><span class="ch-tags">8 faith · +12 affection</span></button>
+      <button class="choice" id="giftLaurel" ${maxed || state.stats.power < 6 ? 'disabled' : ''}><span class="ch-label">Gift a laurel of starlight</span><span class="ch-tags">6 power · +10 affection</span></button>
+    </div>
+    <div class="modal-actions"><button class="btn ghost" id="backOlympus">Back to Olympus</button></div>`, 'social-modal');
+  const updateRelation = (amount, message, cost) => {
+    if (cost && (state.stats.faith < (cost.faith || 0) || state.stats.power < (cost.power || 0))) return;
+    if (cost) { state.stats.faith -= cost.faith || 0; state.stats.power -= cost.power || 0; }
+    rel.affection = Math.min(100, rel.affection + amount);
+    rel.status = relationStatus(rel.affection);
+    rel.met = true;
+    addLog(state, 'star4', `${state.god.name} ${message} ${rival.name}.`, 'divine');
+    renderGame(); saveGame(); playSound('action');
+    openGodMeeting(rival);
+  };
+  $('#meetGod').addEventListener('click', () => { if (!rel.met) updateRelation(8, 'met', null); });
+  $('#shareAmbrosia').addEventListener('click', () => updateRelation(12, 'shared ambrosia with', { faith: 8 }));
+  $('#giftLaurel').addEventListener('click', () => updateRelation(10, 'presented a laurel of starlight to', { power: 6 }));
+  $('#backOlympus').addEventListener('click', openOlympus);
+}
+
+function openHairAtelier() {
+  const owned = new Set(state.salonPurchases);
+  const hairCards = LUXURY_HAIR.map(item => {
+    const isOwned = owned.has(item.id);
+    const isWearing = state.god.hairStyle === item.style;
+    return `<article class="salon-card"><div class="salon-mark">✦</div><div class="salon-copy"><strong>${esc(item.name)}</strong><p>${esc(item.detail)}</p><small>${isOwned ? (isWearing ? 'Currently worn' : 'In your collection') : `${item.faith} faith · ${item.power} power`}</small></div><button class="btn ${isOwned ? 'ghost' : 'primary'}" data-hair="${item.id}" ${isWearing ? 'disabled' : ''}>${isWearing ? 'Wearing' : isOwned ? 'Wear' : 'Acquire'}</button></article>`;
+  }).join('');
+  const stickOwned = state.attractiveStick;
+  openModal(`${closeBtn()}
+    <div class="modal-kicker">A whisper of gold, a lifetime of upkeep</div>
+    <h2>Divine Hair Atelier</h2>
+    <p class="modal-text">The finest stylists in creation work only in ambrosia, starlight, and very unreasonable fees. A new look is applied immediately.</p>
+    <div class="salon-list">${hairCards}
+      <article class="salon-card stick-card"><div class="salon-mark">⚚</div><div class="salon-copy"><strong>The Attractive Stick</strong><p>A polished walking stick with such effortless charisma that even the Fates ask where it was purchased.</p><small>24 faith · 20 power · +8 influence</small></div><button class="btn ${stickOwned ? 'ghost' : 'primary'}" id="buyStick" ${stickOwned || state.stats.faith < 24 || state.stats.power < 20 ? 'disabled' : ''}>${stickOwned ? 'Owned' : 'Acquire'}</button></article>
+    </div>`, 'social-modal salon-modal');
+  $$('#modalRoot [data-hair]').forEach(btn => btn.addEventListener('click', () => {
+    const item = LUXURY_HAIR.find(h => h.id === btn.dataset.hair);
+    if (!item) return;
+    const alreadyOwned = state.salonPurchases.includes(item.id);
+    if (alreadyOwned) {
+      state.god.hairStyle = item.style;
+      addLog(state, 'star4', `${state.god.name} wore the ${item.name.toLowerCase()} again.`, 'divine');
+      renderGame(); saveGame(); playSound('action'); toast(`${item.name} equipped`); openHairAtelier();
+      return;
+    }
+    if (state.stats.faith < item.faith || state.stats.power < item.power) { toast('Not enough faith or power for this look.', true); return; }
+    state.stats.faith -= item.faith; state.stats.power -= item.power;
+    state.salonPurchases.push(item.id); state.god.hairStyle = item.style;
+    addLog(state, 'star4', `The divine hair atelier gave ${state.god.name} the ${item.name.toLowerCase()}.`, 'divine');
+    renderGame(); saveGame(); playSound('action'); toast(`${item.name} acquired`); openHairAtelier();
+  }));
+  $('#buyStick').addEventListener('click', () => {
+    if (state.attractiveStick || state.stats.faith < 24 || state.stats.power < 20) return;
+    state.stats.faith -= 24; state.stats.power -= 20; state.stats.influence += 8;
+    state.attractiveStick = true;
+    addLog(state, 'star4', `${state.god.name} acquired the Attractive Stick. Its reputation precedes it.`, 'divine');
+    renderGame(); saveGame(); playSound('action'); toast('The Attractive Stick is yours · +8 influence'); openHairAtelier();
+  });
+}
 
 function modsText(mods = {}) {
   const out = [];
