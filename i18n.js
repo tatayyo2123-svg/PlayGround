@@ -9,6 +9,8 @@ export function setLang(next) {
 export function isEs() { return lang === 'es'; }
 
 const ES = {
+  'Activities & battles': 'Actividades y batallas',
+  'Train, explore and face legendary foes': 'Entrena, explora y afronta enemigos legendarios',
   /* ── title & chrome ── */
   'A life simulator of the divine': 'Un simulador de vida de lo divino',
   'Every mortal is a prayer. Every prayer is a step.<br /><em>Climb until the stars kneel.</em>':
@@ -71,6 +73,8 @@ const ES = {
   'A crown is a promise the heavens must keep.': 'Una corona es una promesa que los cielos deben cumplir.',
   'Build': 'Constitución',
   'The silhouette that will fill a thousand statues.': 'La silueta que llenará mil estatuas.',
+  'Greek Attire': 'Vestimenta griega',
+  'Choose the drape or armor your statues will wear.': 'Elige los pliegues o la armadura que vestirán tus estatuas.',
   'Presence': 'Presencia',
   'The air around you is part of the body.': 'El aire que te rodea es parte del cuerpo.',
   'Divine radiance': 'Resplandor divino',
@@ -106,6 +110,12 @@ const ES = {
   'Round': 'Redondo',
   'Heart': 'Corazón',
   'Long': 'Alargado',
+  'Heroic': 'Heroico',
+  'Bearded': 'Barbado',
+  'Greek Chiton': 'Quitón griego',
+  'Draped Himation': 'Himatión drapeado',
+  'Bronze Cuirass': 'Coraza de bronce',
+  'Megaran Sweep': 'Peinado megarense',
   'Slender': 'Esbelto',
   'Athletic': 'Atlético',
   'Broad': 'Ancho',

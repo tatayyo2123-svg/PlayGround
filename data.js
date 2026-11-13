@@ -115,6 +115,13 @@ export const APPEARANCE_OPTIONS = {
     { id: 'round', name: 'Round' },
     { id: 'heart', name: 'Heart' },
     { id: 'long', name: 'Long' },
+    { id: 'heroic', name: 'Heroic' },
+    { id: 'bearded', name: 'Bearded' },
+  ],
+  clothing: [
+    { id: 'chiton', name: 'Greek Chiton' },
+    { id: 'himation', name: 'Draped Himation' },
+    { id: 'armor', name: 'Bronze Cuirass' },
   ],
   builds: [
     { id: 'slender', name: 'Slender', desc: 'Willow-thin, made of light and debt.' },
@@ -140,6 +147,7 @@ export const APPEARANCE_OPTIONS = {
     { id: 'locs', name: 'Locs' },
     { id: 'bun', name: 'Bun' },
     { id: 'undercut', name: 'Undercut' },
+    { id: 'megaran', name: 'Megaran Sweep' },
     { id: 'bald', name: 'Bald' },
   ],
   markings: [

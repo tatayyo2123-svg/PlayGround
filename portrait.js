@@ -21,6 +21,8 @@ const HEAD_PATHS = {
   round: 'M200 86 C250 86 276 124 276 170 C276 218 246 252 200 258 C154 252 124 218 124 170 C124 124 150 86 200 86 Z',
   heart: 'M200 84 C250 84 276 118 276 158 C276 198 250 218 236 238 C224 256 212 266 200 268 C188 266 176 256 164 238 C150 218 124 198 124 158 C124 118 150 84 200 84 Z',
   long: 'M200 80 C242 80 266 114 266 160 C266 216 244 264 200 282 C156 264 134 216 134 160 C134 114 158 80 200 80 Z',
+  heroic: 'M200 80 C246 80 270 114 270 160 C270 196 260 222 246 242 C232 260 216 270 200 272 C184 270 168 260 154 242 C140 222 130 196 130 160 C130 114 154 80 200 80 Z',
+  bearded: 'M200 80 C246 80 270 116 270 160 C270 202 256 234 238 250 C226 264 212 274 200 276 C188 274 174 264 162 250 C144 234 130 202 130 160 C130 116 154 80 200 80 Z',
 };
 
 const BUILD_WIDTH = { slender: 104, athletic: 118, broad: 134, colossal: 148 };
@@ -74,6 +76,7 @@ export function renderPortrait(god, opts = {}) {
   const face = a.face || 'oval';
   const eyeShape = a.eyeShape || 'almond';
   const hairStyle = a.hairStyle || 'flowing';
+  const clothing = a.clothing || 'chiton';
   const markings = a.markings || 'none';
   const crown = a.crown || 'none';
   const complexion = a.complexion || 'natural';
@@ -115,6 +118,10 @@ export function renderPortrait(god, opts = {}) {
     backHair = `<path d="M200 64 C146 64 112 106 112 170 C112 196 108 218 102 238 L298 238 C292 218 288 196 288 170 C288 106 254 64 200 64 Z" fill="url(#${uid}-hair)"/>
       <path d="M254 92 C300 102 322 136 322 180 C322 226 306 280 282 328 C274 342 264 348 258 338 C270 300 280 260 284 222 C288 180 278 138 246 112 Z" fill="url(#${uid}-hair)"/>
       <ellipse cx="257" cy="102" rx="13" ry="7" transform="rotate(24 257 102)" fill="#d9b36b" opacity=".95"/>`;
+  } else if (hairStyle === 'megaran') {
+    backHair = `<path d="M200 64 C146 64 112 106 112 166 C112 202 108 230 100 252 L296 252 C290 220 288 194 288 164 C288 106 254 64 200 64 Z" fill="url(#${uid}-hair)"/>
+      <path d="M252 102 C294 112 316 144 314 184 C312 232 284 286 248 320 C232 334 218 324 228 310 C254 278 274 238 278 198 C282 162 270 130 242 116 Z" fill="url(#${uid}-hair)"/>
+      <path d="M274 124 C290 160 286 212 264 252" fill="none" stroke="${lighten(hair, .12)}" stroke-width="3" opacity=".55"/>`;
   } else if (hairStyle === 'curls') {
     backHair = `<g fill="url(#${uid}-hair)">
       <circle cx="124" cy="142" r="34"/><circle cx="111" cy="188" r="32"/><circle cx="116" cy="234" r="30"/><circle cx="130" cy="274" r="25"/>
@@ -190,6 +197,12 @@ export function renderPortrait(god, opts = {}) {
       <path d="M200 100 C180 102 162 114 150 136 C166 126 182 122 196 126 C199 116 200 108 200 100 Z" fill="url(#${uid}-hair)"/>
       <path d="M140 118 C154 112 174 112 190 120 C198 124 202 130 204 136 C186 128 166 126 148 134 C144 128 140 123 140 118 Z" fill="${lighten(hair, 0.05)}"/>
       <path d="M246 112 C258 118 266 130 268 144 C274 142 280 144 284 150 C274 160 258 164 246 156 C240 146 240 126 246 112 Z" fill="url(#${uid}-hair)"/>`;
+  } else if (hairStyle === 'megaran') {
+    frontHair = `<path d="M200 100 C174 98 148 110 134 132 C156 118 180 118 198 130 C214 140 226 154 236 168 C242 148 240 126 228 112 C220 104 210 100 200 100 Z" fill="url(#${uid}-hair)"/>
+      <path d="M198 100 C176 92 148 96 132 114 C150 108 166 112 178 122 C192 134 198 148 198 160 C212 148 218 130 212 114 Z" fill="${lighten(hair, .08)}"/>
+      <path d="M144 132 C128 162 128 192 138 216 C148 198 152 176 154 154 Z" fill="url(#${uid}-hair)"/>
+      <path d="M250 132 C264 158 270 186 264 214" fill="none" stroke="url(#${uid}-hair)" stroke-width="12" stroke-linecap="round"/>
+      <path d="M198 102 C178 100 158 106 144 120" fill="none" stroke="${hairDark}" stroke-width="2" opacity=".55"/>`;
   } else if (hairStyle === 'curls') {
     frontHair = `${cap}
       <g fill="url(#${uid}-hair)">
@@ -353,6 +366,33 @@ export function renderPortrait(god, opts = {}) {
     <ellipse cx="239" cy="212" rx="2.2" ry="1.6"/><ellipse cx="229" cy="220" rx="1.6" ry="1.2"/>
     <ellipse cx="196" cy="150" rx="1.8" ry="1.2"/>
   </g>` : '';
+  const garment = clothing === 'armor'
+    ? `<path d="M200 288 C${200 - sw * .58} 288 ${200 - sw * .88} 308 ${200 - sw} 332 C${200 - sw * 1.2} 368 ${200 - sw * 1.35} 444 ${200 - sw * 1.44} 520 L${200 + sw * 1.44} 520 C${200 + sw * 1.35} 444 ${200 + sw * 1.2} 368 ${200 + sw} 332 C${200 + sw * .88} 308 ${200 + sw * .58} 288 200 288 Z" fill="url(#${uid}-robe)" stroke="#c89f5a" stroke-opacity=".6" stroke-width="2"/>
+      <path d="M160 300 Q200 280 240 300 L230 385 Q200 402 170 385 Z" fill="url(#${uid}-gold)" stroke="#8a6336" stroke-width="2"/>
+      <path d="M170 314 Q184 302 200 314 Q216 302 230 314 L222 365 Q200 378 178 365 Z" fill="${mix(domain.color, '#392817', .48)}" stroke="#e1c17d" stroke-width="1.5"/>
+      <path d="M181 320 Q200 330 219 320 M180 346 Q200 356 220 346" fill="none" stroke="#f0d79d" stroke-opacity=".55" stroke-width="2"/>
+      <path d="M166 382 L234 382 L244 426 L228 420 L216 432 L200 422 L184 432 L172 420 L156 426 Z" fill="${robeA}" stroke="#c89f5a" stroke-opacity=".65" stroke-width="1.5"/>
+      <path d="M200 290 L162 302 L200 382 L238 302 Z" fill="${mix(domain.color, '#0a0912', .76)}" stroke="#dfbd77" stroke-width="2"/>
+      <circle cx="200" cy="306" r="7" fill="url(#${uid}-gold)" stroke="#8a6336" stroke-width="1.5"/>`
+    : clothing === 'himation'
+      ? `<path d="M200 288 C${200 - sw * .58} 288 ${200 - sw * .88} 308 ${200 - sw} 332 C${200 - sw * 1.2} 368 ${200 - sw * 1.35} 444 ${200 - sw * 1.44} 520 L${200 + sw * 1.44} 520 C${200 + sw * 1.35} 444 ${200 + sw * 1.2} 368 ${200 + sw} 332 C${200 + sw * .88} 308 ${200 + sw * .58} 288 200 288 Z" fill="url(#${uid}-robe)" stroke="${accent}" stroke-opacity=".3" stroke-width="1.2"/>
+        <path d="M170 292 C130 310 118 360 132 416 C144 464 172 492 200 520 L200 382 C184 354 174 322 170 292 Z" fill="${mix(domain.color, '#0a0912', .72)}" stroke="#e5c485" stroke-opacity=".7" stroke-width="2"/>
+        <path d="M170 300 C180 338 190 366 200 382 C214 366 228 338 238 300 Z" fill="${mix(domain.color, '#0a0912', .82)}" stroke="${accent}" stroke-opacity=".25" stroke-width="1"/>
+        <path d="M162 300 C172 336 186 366 200 382 C214 366 228 336 238 300" fill="none" stroke="#e5c485" stroke-opacity=".62" stroke-width="2.4"/>
+        <path d="M146 298 C164 311 182 316 200 316 C218 316 236 311 254 298" fill="none" stroke="url(#${uid}-gold)" stroke-width="3.4" stroke-linecap="round"/>
+        <circle cx="170" cy="306" r="5" fill="url(#${uid}-gold)"/>`
+      : `<path d="M200 288 C${200 - sw * .58} 288 ${200 - sw * .88} 308 ${200 - sw} 332 C${200 - sw * 1.2} 368 ${200 - sw * 1.35} 444 ${200 - sw * 1.44} 520 L${200 + sw * 1.44} 520 C${200 + sw * 1.35} 444 ${200 + sw * 1.2} 368 ${200 + sw} 332 C${200 + sw * .88} 308 ${200 + sw * .58} 288 200 288 Z" fill="url(#${uid}-robe)" stroke="${accent}" stroke-opacity=".3" stroke-width="1.2"/>
+        <path d="M200 290 L162 302 C172 338 186 368 200 384 C214 368 228 338 238 302 Z" fill="${mix(domain.color, '#0a0912', .82)}" stroke="${accent}" stroke-opacity=".22" stroke-width="1"/>
+        <path d="M162 300 C172 336 186 366 200 382 C214 366 228 336 238 300" fill="none" stroke="#e5c485" stroke-opacity=".62" stroke-width="2.4"/>
+        <path d="M146 298 C164 311 182 316 200 316 C218 316 236 311 254 298" fill="none" stroke="url(#${uid}-gold)" stroke-width="3.4" stroke-linecap="round"/>
+        <circle cx="200" cy="330" r="7" fill="${accent}" stroke="#f0d79d" stroke-width="2"/>
+        <circle cx="200" cy="328" r="2.3" fill="#fff8e3" opacity=".9"/>
+        <path d="M120 366 C148 348 174 340 200 340 C226 340 252 348 280 366" fill="none" stroke="${accent}" stroke-opacity=".16" stroke-width="9"/>
+        <path d="M148 388 C156 456 166 496 180 518 M252 388 C244 456 234 496 220 518" fill="none" stroke="${accent}" stroke-opacity=".1" stroke-width="2"/>
+        <path d="M100 448 C130 480 160 500 200 500 C240 500 270 480 300 448" fill="none" stroke="${accent}" stroke-opacity=".14" stroke-width="10"/>`;
+  const beard = face === 'bearded' ? `<path d="M145 190 C151 204 158 214 169 220 C176 228 182 248 200 258 C218 248 224 228 231 220 C242 214 249 204 255 190 C250 220 240 246 224 260 C216 268 208 272 200 273 C192 272 184 268 176 260 C160 246 150 220 145 190 Z" fill="url(#${uid}-hair)" stroke="${hairDark}" stroke-width="1.5"/>
+    <path d="M166 202 Q180 194 194 202 Q200 208 200 212 Q200 208 206 202 Q220 194 234 202" fill="none" stroke="${hairDark}" stroke-width="5" stroke-linecap="round"/>
+    <path d="M182 242 Q200 250 218 242 M188 256 Q200 260 212 256" fill="none" stroke="${lighten(hair, .12)}" stroke-width="1.5" opacity=".6"/>` : '';
   const viewBox = opts.crop === 'face' ? '88 16 224 224' : '0 0 400 520';
 
   return `<svg class="portrait-svg" viewBox="${viewBox}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Portrait of ${(god.name || 'a god').replace(/"/g, '')}, age ${age}">
@@ -398,16 +438,8 @@ export function renderPortrait(god, opts = {}) {
     <path d="M177 260 C184 275 190 284 200 288 C210 284 216 275 223 260" fill="none" stroke="${darken(skin, .4)}" stroke-opacity=".35" stroke-width="2"/>
     <path d="M179 297 C186 303 194 307 200 307 C206 307 214 303 221 297" fill="none" stroke="#ffffff" stroke-opacity=".14" stroke-width="2"/>
 
-    <!-- shoulders -->
-    <path d="M200 288 C${200 - sw * .58} 288 ${200 - sw * .88} 308 ${200 - sw} 332 C${200 - sw * 1.2} 368 ${200 - sw * 1.35} 444 ${200 - sw * 1.44} 520 L${200 + sw * 1.44} 520 C${200 + sw * 1.35} 444 ${200 + sw * 1.2} 368 ${200 + sw} 332 C${200 + sw * .88} 308 ${200 + sw * .58} 288 200 288 Z" fill="url(#${uid}-robe)" stroke="${accent}" stroke-opacity=".3" stroke-width="1.2"/>
-    <path d="M200 290 L162 302 C172 338 186 368 200 384 C214 368 228 338 238 302 Z" fill="${mix(domain.color, '#0a0912', .82)}" stroke="${accent}" stroke-opacity=".22" stroke-width="1"/>
-    <path d="M162 300 C172 336 186 366 200 382 C214 366 228 336 238 300" fill="none" stroke="#e5c485" stroke-opacity=".62" stroke-width="2.4"/>
-    <path d="M146 298 C164 311 182 316 200 316 C218 316 236 311 254 298" fill="none" stroke="url(#${uid}-gold)" stroke-width="3.4" stroke-linecap="round"/>
-    <circle cx="200" cy="330" r="7" fill="${accent}" stroke="#f0d79d" stroke-width="2"/>
-    <circle cx="200" cy="328" r="2.3" fill="#fff8e3" opacity=".9"/>
-    <path d="M120 366 C148 348 174 340 200 340 C226 340 252 348 280 366" fill="none" stroke="${accent}" stroke-opacity=".16" stroke-width="9"/>
-    <path d="M148 388 C156 456 166 496 180 518 M252 388 C244 456 234 496 220 518" fill="none" stroke="${accent}" stroke-opacity=".1" stroke-width="2"/>
-    <path d="M100 448 C130 480 160 500 200 500 C240 500 270 480 300 448" fill="none" stroke="${accent}" stroke-opacity=".14" stroke-width="10"/>
+    <!-- Greek clothing -->
+    ${garment}
 
     ${backHair}
     ${ears}
@@ -429,6 +461,7 @@ export function renderPortrait(god, opts = {}) {
     ${ageLines}
     ${ageSpots}
     ${mark}
+    ${beard}
     ${frontHair}
     ${hairStyle === 'flowing' ? `<path d="M200 72 C202 90 202 102 200 112" fill="none" stroke="${hairDark}" stroke-width="1.4" opacity=".55"/>
     <g fill="none" stroke="${lighten(hair, .3)}" stroke-width="1.2" opacity=".22" stroke-linecap="round">
