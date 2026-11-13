@@ -5,6 +5,8 @@ import {
   newGame, performAction, canAfford, canAscend, ascend, standing,
   endAeon, applyEventChoice, pickEvent, addLog, RIVAL_POOL, setNumberLocale,
 } from './data.js';
+import { openActivities } from './activities.js';
+import { ensureSocial, createSocialUI } from './social.js';
 import { renderPortrait } from './portrait.js';
 import { rivalPortrait } from './rival-portrait.js';
 import { icon, DOMAIN_ICONS, STAT_ICONS, TRAIT_ICONS, RACE_ICONS } from './icons.js';
@@ -53,6 +55,7 @@ function makeDraft() {
       glow: true,
       hairStyle: 'flowing',
       hairColor: '#1c1a26',
+      clothing: 'chiton',
       markings: 'rune',
       crown: 'circlet',
       complexion: 'natural',
@@ -334,6 +337,8 @@ function renderPanel() {
       ${groupLabel(t('Build'), t('The silhouette that will fill a thousand statues.'))}
       <div class="field-group option-card-grid">${APPEARANCE_OPTIONS.builds.map(b => `<button class="option-card${b.id === a.build ? ' selected' : ''}" data-field="appearance.build" data-value="${b.id}">
         <div class="oc-top">${icon(b.id === 'slender' ? 'moon' : b.id === 'athletic' ? 'shield' : b.id === 'broad' ? 'mountain' : 'crown')}<span class="oc-name">${t(b.name)}</span></div><p>${esc(t(b.desc))}</p></button>`).join('')}</div>
+      ${groupLabel(t('Greek Attire'), t('Choose the drape or armor your statues will wear.'))}
+      <div class="field-group">${options('appearance.clothing', APPEARANCE_OPTIONS.clothing, a.clothing || 'chiton')}</div>
       ${groupLabel(t('Presence'), t('The air around you is part of the body.'))}
       <div class="field-group"><div class="toggle-row"><div><strong>${t('Divine radiance')}</strong><p>${t('A soft glow gathers at your edges.')}</p></div><button class="switch on" disabled style="opacity:.55"></button></div></div>
       <p style="font-family:var(--serif);font-style:italic;font-size:11px;color:var(--muted-2);margin-top:4px">${t('Your build shapes the shoulders and chest of every idol carved in your name.')}</p>`;
@@ -421,6 +426,7 @@ function bindCreator() {
     a.glow = Math.random() < 0.75;
     a.hairStyle = rand(APPEARANCE_OPTIONS.hairStyles).id;
     a.hairColor = rand(HAIR_COLORS).hex;
+    a.clothing = rand(APPEARANCE_OPTIONS.clothing).id;
     a.markings = rand(APPEARANCE_OPTIONS.markings).id;
     a.crown = rand(APPEARANCE_OPTIONS.crowns).id;
     a.complexion = rand(APPEARANCE_OPTIONS.complexions).id;
@@ -438,6 +444,7 @@ function beginGame() {
   if (!draft.pantheon.trim()) draft.pantheon = t('The New Order');
   state = newGame(draft);
   state.locale = uiLang;
+  ensureSocial(state);
   saveGame();
   enterGame();
   playSound('ascend');
@@ -445,6 +452,7 @@ function beginGame() {
 
 /* ══════════ game shell ══════════ */
 function enterGame() {
+  ensureSocial(state);
   showScreen('screen-game');
   showGameSection('realm');
   renderGame();
@@ -468,6 +476,7 @@ function loadSaved() {
     const parsed = JSON.parse(raw);
     if (!parsed || !parsed.god || typeof parsed.followers !== 'number') return false;
     state = parsed;
+    ensureSocial(state);
     if (!state.lastRanks) state.lastRanks = {};
     if (!state.age) state.age = 18 + Math.max(0, (state.aeon || 1) - 1) * 3;
     if (!Array.isArray(state.relationships)) state.relationships = [];
@@ -494,6 +503,7 @@ function tagHtml(text, good) {
 /* ══════════ game render ══════════ */
 function renderGame() {
   if (!state) return;
+  ensureSocial(state);
   const d = domainOf(state.god.domain);
   const l = lineageOf(state.god.lineage);
   const might = computeMight(state);
@@ -585,23 +595,61 @@ function renderGame() {
 }
 
 function renderVillage() {
-  const souls = Math.max(0, state.followers);
+  const souls = Math.max(0, Number(state.followers) || 0);
   const stage = souls >= 5000 ? 2 : souls >= 1500 ? 1 : 0;
   const stages = ['A humble settlement', 'A growing village', 'A flourishing town'];
-  const houses = [
-    [67, 206, 1], [150, 225, .8], [471, 211, .9], [556, 229, .75],
-    [227, 247, .65], [406, 247, .68], [22, 251, .65], [592, 265, .55],
-  ].slice(0, [4, 6, 8][stage]).map(([x, y, scale]) => `<g transform="translate(${x} ${y}) scale(${scale})"><path d="M0 30 L40 2 L80 30 V70 H0Z" fill="#b39b81"/><path d="M-7 32 L40 -2 L87 32 L81 37 L40 10 L0 37Z" fill="#654b50"/><path d="M31 70 V43 Q40 34 49 43 V70" fill="#3b343b"/><path d="M10 42h12v12H10z M58 42h12v12H58z" fill="#edcb85"/></g>`).join('');
+  const growth = Math.sqrt(Math.min(souls, 5000) / 5000);
+  const homes = [
+    [67, 225, .72], [151, 238, .62], [503, 226, .72], [575, 240, .58],
+    [218, 249, .55], [443, 245, .58], [25, 252, .52], [622, 257, .48],
+    [104, 264, .48], [537, 263, .5], [271, 250, .55], [389, 251, .54],
+    [177, 270, .44], [476, 268, .46], [73, 276, .42], [588, 277, .4],
+    [321, 266, .48], [350, 278, .4],
+  ];
+  const homeCount = Math.min(homes.length, 4 + Math.floor(growth * 14));
+  const houses = homes.slice(0, homeCount).map(([x, y, scale], i) => {
+    const roof = ['#a85e50', '#bd7957', '#8e544c'][i % 3];
+    return `<g class="town-home" transform="translate(${x} ${y}) scale(${scale})"><path d="M2 29h54v38H2z" fill="#ead9b9"/><path d="M-5 30L29 3l34 27-5 5L29 12 0 36Z" fill="${roof}"/><path d="M23 67V46q6-10 12 0v21" fill="#755b4d"/><path d="M8 41h9v10H8z M41 41h9v10h-9z" fill="#f6d68d"/><path d="M7 67h45" stroke="#c2a887" stroke-width="2"/></g>`;
+  }).join('');
+  const crowdCount = Math.floor(growth * 24);
+  const crowd = Array.from({ length: crowdCount }, (_, i) => {
+    const x = 82 + ((i * 73 + 29) % 515);
+    const y = 290 + ((i * 17) % 25);
+    const color = ['#493e48', '#51434a', '#61504a', '#3e4748'][i % 4];
+    return `<g class="town-person" style="--person-delay:${(i % 8) * -.23}s" transform="translate(${x} ${y})"><circle cy="-7" r="2.4" fill="#e6c997"/><path d="M-2.8-4q2.8-2 5.6 0l1 7h-7.6z" fill="${color}"/><path d="M-1 3v3m2-3v3" stroke="${color}" stroke-width="1.5"/></g>`;
+  }).join('');
+  const oliveTrees = [[35, 245], [645, 246], [240, 278], [416, 276]].map(([x, y], i) =>
+    `<g transform="translate(${x} ${y}) scale(${i > 1 ? .72 : 1})"><path d="M0 0v28" stroke="#6b5740" stroke-width="4"/><circle cx="-7" cy="-7" r="10" fill="#58694e"/><circle cx="6" cy="-11" r="12" fill="#6c7952"/><circle cx="1" cy="-20" r="9" fill="#7d8458"/><circle cx="-5" cy="-8" r="1.5" fill="#c79b52"/><circle cx="7" cy="-14" r="1.5" fill="#c79b52"/></g>`).join('');
   const races = state.races.map(r => esc(r.custom ? r.name : t(r.name))).join(' · ') || '—';
   $('#villageContent').innerHTML = `
     <div class="village-scene" role="img" aria-label="${esc(t('A settlement beneath your divine light'))}">
       <svg viewBox="0 0 680 340" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-        <defs><linearGradient id="villageSky" x2="0" y2="1"><stop stop-color="#292a48"/><stop offset="1" stop-color="#b08078"/></linearGradient><radialGradient id="villageGlow"><stop stop-color="#ffe4a1" stop-opacity=".75"/><stop offset="1" stop-color="#ffe4a1" stop-opacity="0"/></radialGradient></defs>
-        <path fill="url(#villageSky)" d="M0 0h680v340H0z"/><circle cx="340" cy="97" r="105" fill="url(#villageGlow)"/><circle cx="340" cy="98" r="30" fill="#f2d8a4" opacity=".8"/>
-        <path d="M0 196L100 105l74 74 75-83 82 90 76-104 91 103 80-74 102 89v140H0Z" fill="#555567"/><path d="M0 220Q100 163 195 210T390 195T680 211v129H0Z" fill="#454d4e"/>
-        <path d="M0 265 Q185 190 340 251 T680 245 V340H0Z" fill="#72775f"/><path d="M270 340 Q320 275 337 242 Q350 278 438 340Z" fill="#b1a184" opacity=".7"/>
-        <g transform="translate(286 148)"><path d="M0 48L54 9l54 39v87H0Z" fill="#d5bea0"/><path d="M-8 48L54 1l62 47-7 6L54 15 0 54Z" fill="#67545a"/><path d="M37 135V84q17-21 34 0v51" fill="#4a4246"/><path d="M45 45h18v22H45z" fill="#f4d595"/><path d="M54 1v-24 M45-14h18" stroke="#ebd19c" stroke-width="3"/></g>
-        ${houses}<path d="M0 310 Q100 288 191 316T377 313T680 301V340H0Z" fill="#343d3a" opacity=".55"/>
+        <defs>
+          <linearGradient id="villageSky" x2="0" y2="1"><stop stop-color="#292a48"/><stop offset=".58" stop-color="#9c7280"/><stop offset="1" stop-color="#e1ab79"/></linearGradient>
+          <radialGradient id="villageGlow"><stop stop-color="#fff1bb" stop-opacity=".9"/><stop offset="1" stop-color="#ffe4a1" stop-opacity="0"/></radialGradient>
+          <linearGradient id="villageMarble" x2="0" y2="1"><stop stop-color="#fff0cf"/><stop offset="1" stop-color="#cbb697"/></linearGradient>
+          <linearGradient id="villageGround" x2="0" y2="1"><stop stop-color="#818363"/><stop offset="1" stop-color="#454d47"/></linearGradient>
+        </defs>
+        <path fill="url(#villageSky)" d="M0 0h680v340H0z"/>
+        <circle class="village-sun-glow" cx="340" cy="105" r="122" fill="url(#villageGlow)"/><circle cx="340" cy="100" r="27" fill="#fff0c1" opacity=".9"/>
+        <g fill="#f8e6bd" opacity=".75"><circle cx="78" cy="44" r="1.5"/><circle cx="142" cy="75" r="1"/><circle cx="543" cy="51" r="1.4"/><circle cx="606" cy="91" r="1"/><circle cx="218" cy="38" r="1"/></g>
+        <path d="M0 199L85 119l55 58 79-88 74 92 61-61 66 64 83-105 67 85 60-47 50 53v130H0Z" fill="#655f70"/>
+        <path d="M0 221Q111 163 207 215T400 201T680 217v123H0Z" fill="#565d5b"/>
+        <path d="M0 262Q154 211 289 253T500 241T680 251V340H0Z" fill="url(#villageGround)"/>
+        <path d="M273 340Q324 277 337 231Q357 277 439 340Z" fill="#c5ac83" opacity=".8"/><path d="M321 340Q336 285 339 255Q350 292 376 340Z" fill="#e4cfaa" opacity=".65"/>
+        <path d="M0 287Q89 266 169 288T337 286T510 285T680 274" fill="none" stroke="#d0b98e" stroke-width="2" opacity=".34"/>
+        <g class="village-temple" transform="translate(286 131)">
+          <path d="M-11 60L54 15l65 45-6 7L54 27 0 68Z" fill="#a96e58"/><path d="M0 64h108v8H0z" fill="#f2dfbd"/>
+          <path d="M8 72h92v47H8z" fill="url(#villageMarble)"/><path d="M2 119h104v8H2z" fill="#bca883"/><path d="M-5 127h114v7H-5z" fill="#eee0c2"/>
+          <path d="M15 75v42m17-42v42m17-42v42m17-42v42m17-42v42" stroke="#fff0d3" stroke-width="7"/><path d="M15 75v42m17-42v42m17-42v42m17-42v42m17-42v42" stroke="#c8b695" stroke-width="1.5"/>
+          <path d="M45 119V91q9-14 18 0v28" fill="#68535a"/><path d="M52 48v-27m-9 10h18" stroke="#f1d7a4" stroke-width="3"/><circle cx="54" cy="20" r="4" fill="#ffe8ae"/>
+          <path d="M-12 135h128" stroke="#f2e3c4" stroke-width="4"/>
+        </g>
+        <g opacity=".88"><path d="M173 207v-34h18v34m-25 0h32" fill="#d6c5a5"/><path d="M168 173l14-14 14 14z" fill="#a75e50"/><path d="M483 209v-45h19v45m-26 0h33" fill="#decdae"/><path d="M477 164l16-15 16 15z" fill="#a75e50"/><path d="M488 149v-12h9v12" fill="#e8d4b0"/></g>
+        ${oliveTrees}${houses}
+        <path d="M0 311Q98 292 191 318T377 314T680 300V340H0Z" fill="#303d3a" opacity=".54"/>
+        <g class="village-crowd">${crowd}</g>
+        <g fill="#f8d995" opacity=".95"><circle cx="180" cy="229" r="2"/><circle cx="495" cy="223" r="2"/><circle cx="339" cy="158" r="2.5"/><circle cx="349" cy="158" r="1.5"/></g>
       </svg>
       <div class="village-scene-caption"><span>${esc(t('Aeon {n}', { n: roman(state.aeon) }))}</span><strong>${esc(t(stages[stage]))}</strong></div>
     </div>
@@ -705,6 +753,8 @@ function toneForAction(id) {
 
 /* ══════════ game actions ══════════ */
 function bindGame() {
+  const socialUI = createSocialUI({ getState: () => state, openModal, closeBtn, renderGame, addLog, toast, playSound });
+  $('#activitiesBtn').addEventListener('click', () => openActivities({ state, openModal, closeBtn, renderGame, isEs }));
   $('#actionsGrid').addEventListener('click', e => {
     const card = e.target.closest('.action'); if (!card) return;
     const action = ACTIONS.find(a => a.id === card.dataset.action); if (!action) return;
@@ -787,6 +837,7 @@ function bindGame() {
   });
 
   $('#visitVillageBtn').addEventListener('click', () => { showGameSection('village'); playSound('click'); });
+  $('#villagePeopleBtn').addEventListener('click', () => socialUI.openVillagePeople());
   $('#leaveVillageBtn').addEventListener('click', () => { showGameSection('realm'); playSound('click'); });
   $('.mobile-tabs').addEventListener('click', e => {
     const btn = e.target.closest('[data-mtab]'); if (!btn) return;
@@ -1284,9 +1335,9 @@ function init() {
   // small developer hook, useful for QA and future expansions
   window.godspire = {
     get state() { return state; },
-    setState(s) { state = s; saveGame(); enterGame(); },
+    setState(s) { state = s; if (state) ensureSocial(state); saveGame(); enterGame(); },
     render: renderGame,
-    newGame: d => { draft = { ...draft, ...d }; state = newGame(draft); saveGame(); enterGame(); },
+    newGame: d => { draft = { ...draft, ...d }; state = newGame(draft); ensureSocial(state); saveGame(); enterGame(); },
     openEvent: () => { if (state) openEventModal(pickEvent(state)); },
     openRaceForge,
   };
